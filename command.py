@@ -1,10 +1,11 @@
 # -*- coding:utf-8 -*-
 from cmd import Cmd
 
+
 def xtermCMD(ip1, port1, ip2, port2):
-    name="Host_%d: "
+    name = "Host_%d: "
     file = "setupNode.py"
-    args = "%s %d %s %d" % (ip1,port1,ip2,port2)
+    args = "%s %d %s %d" % (ip1, port1, ip2, port2)
 
     name = "%s %s %d" % (name, ip1, port1)
 

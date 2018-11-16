@@ -4,7 +4,7 @@ from utils import gen_pub_pvt
 
 class Income(object):
     def __init__(self, ID, peerID, amount):
-        #和Leger的ID保持一致
+        # 和Leger的ID保持一致
         self.ID = ID
         self.peerID = peerID
         self.amount = amount
@@ -14,9 +14,10 @@ class Income(object):
         res = self.peerID, " -> ", self.ID, " : ", self.amount
         return res
 
+
 class Expense(object):
     def __init__(self, ID, peerID, amount):
-        #和Leger的ID保持一致
+        # 和Leger的ID保持一致
         self.ID = ID
         self.peerID = peerID
         self.amount = amount
@@ -29,7 +30,7 @@ class Expense(object):
 
 class Leger(object):
     def __init__(self, ID):
-        #和node的ID保持一致
+        # 和node的ID保持一致
         self.ID = ID
         self.pub_key, self.pvt_key = gen_pub_pvt()
         self.incomes = []
@@ -50,7 +51,6 @@ class Leger(object):
         filePath = 'legers/leger', self.ID
         with open(filePath, 'w') as f:
             f.write(self.toString())
-
 
     def toString(self):
         res = "incomes: \n"
