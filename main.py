@@ -1,3 +1,4 @@
+# -*- coding:utf-8 -*-
 import logging
 
 #默认日志目录
@@ -26,7 +27,7 @@ from mininet.util import *
 IP = "10.0.0.0/8"
 PORT = 9000
 
-P2PNet = None;
+P2PNet = None
 
 SWITCHES = { 'user': UserSwitch,
              'ovs': OVSSwitch,
@@ -46,33 +47,33 @@ TOPOS = { 'minimal': MinimalTopo,
 def setupP2PNet(arg1=1, arg2=3, netType="net"):
 
     if netType == "circle":
-        print("circle");
+        print("circle")
         topo = circleTopo(arg1,arg2)
         # topo = buildTopo(TOPOS, "torus,3,3")
         switch = customClass(SWITCHES,"ovsbr,stp=1")
-        P2PNet = Mininet(topo=topo,switch=switch, ipBase=IP,waitConnected=True);
+        P2PNet = Mininet(topo=topo,switch=switch, ipBase=IP,waitConnected=True)
     elif netType == "net":
-        print("net");
+        print("net")
         topo = netTopo(arg1)
         switch = customClass(SWITCHES, "ovsbr,stp=1")
-        P2PNet = Mininet(topo=topo, switch=switch, ipBase=IP, waitConnected=True);
+        P2PNet = Mininet(topo=topo, switch=switch, ipBase=IP, waitConnected=True)
     else:
         if netType == "star":
-            print("star");
+            print("star")
             topo = starTopo(arg1)
         elif netType == "tree":
-            print("tree");
+            print("tree")
             topo = treeTopo(arg1,arg2)
         elif netType == "netsimple":
-            print("netSimple");
+            print("netSimple")
             topo = netsimpleTopo(arg1)
         else:
-            print("netType error!");
-            sys.exit(0);
+            print("netType error!")
+            sys.exit(0)
 
-        P2PNet = Mininet(topo=topo,ipBase=IP);
+        P2PNet = Mininet(topo=topo,ipBase=IP)
 
-    P2PNet.start();
+    P2PNet.start()
 
     for i, s in enumerate(P2PNet.switches):
         print(i,s.IP)

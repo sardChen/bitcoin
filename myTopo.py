@@ -1,3 +1,5 @@
+# -*- coding:utf-8 -*-
+
 from mininet.topo import Topo
 from mininet.util import irange
 
@@ -63,24 +65,24 @@ class circleTopo(Topo):
 #
 #         nodes = []
 #         for i in irange( 1, n ):
-#             node = self.addNewNode('s%s' % i, genHostName( i, i ) );
-#             nodes.append(node);
+#             node = self.addNewNode('s%s' % i, genHostName( i, i ) )
+#             nodes.append(node)
 #
-#         num = n+1;
+#         num = n+1
 #         print(type(nodes))
-#         nlen = len(nodes);
+#         nlen = len(nodes)
 #         for i in irange(0,nlen-1):
-#             switch = self.addSwitch('s%s' % num);
-#             num+=1;
-#             self.addLink(switch,nodes[i]);
-#             self.addLink(switch,nodes[i-1]);
+#             switch = self.addSwitch('s%s' % num)
+#             num+=1
+#             self.addLink(switch,nodes[i])
+#             self.addLink(switch,nodes[i-1])
 
 
     def addNewNode(self, str1, str2):
-        node = self.addSwitch(str1);
-        host = self.addHost(str2);
-        self.addLink(node,host);
-        return node;
+        node = self.addSwitch(str1)
+        host = self.addHost(str2)
+        self.addLink(node,host)
+        return node
 
 
 class treeTopo( Topo ):
@@ -108,22 +110,22 @@ class netTopo(Topo):
     #任意两个host之间连接
     def build( self, n=2, **_opts):
         self.n = n
-        genHostName = lambda i, j: 'h%ss%d' % ( j, i );
+        genHostName = lambda i, j: 'h%ss%d' % ( j, i )
 
         nodes = []
         num = 0
 
         for i in irange( 1, n ):
-            node = self.addNewNode('s%s' % i, genHostName( i, i ));
+            node = self.addNewNode('s%s' % i, genHostName( i, i ))
             for n in nodes:
                 self.addLink(n, node)
             nodes.append(node)
 
     def addNewNode(self, str1, str2):
-        node = self.addSwitch(str1);
-        host = self.addHost(str2);
-        self.addLink(node, host);
-        return node;
+        node = self.addSwitch(str1)
+        host = self.addHost(str2)
+        self.addLink(node, host)
+        return node
 
 
 
@@ -132,9 +134,9 @@ class netsimpleTopo(Topo):
     #简化全连接(本质任意两个host之间连接)
     def build( self, n=2, **_opts):
         self.n = n
-        genHostName = lambda i, j: 'h%ss%d' % ( j, i );
+        genHostName = lambda i, j: 'h%ss%d' % ( j, i )
 
-        switch0 = self.addSwitch('s0');
+        switch0 = self.addSwitch('s0')
         hosts = []
         for i in irange(1, n ):
             host = self.addHost( genHostName( i, i ))

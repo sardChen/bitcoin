@@ -1,4 +1,4 @@
-
+# -*- coding:utf-8 -*-
 from cmd import Cmd
 
 def xtermCMD(ip1, port1, ip2, port2):
