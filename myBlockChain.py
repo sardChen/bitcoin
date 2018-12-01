@@ -5,7 +5,7 @@ import json
 from time import time
 
 
-class Blockchain(object):
+class BlockChain(object):
     def __init__(self):
         self.chain = []
         self.current_transactions = []
@@ -225,7 +225,7 @@ def full_chain(blockchain):
 
 if __name__ == '__main__':
     # Instantiate the Blockchain
-    blockchain = Blockchain()
+    blockchain = BlockChain()
 
     mine_msg = mine(blockchain, '192.168.0.1')
     print('mine_msg', mine_msg)
