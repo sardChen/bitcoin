@@ -1,11 +1,9 @@
-# -*- coding:utf-8 -*-
-from cmd import Cmd
 
 
 def xtermCMD(ip1, port1, ip2, port2):
-    name = "Host_%d: "
+    name="Host_%d: "
     file = "setupNode.py"
-    args = "%s %d %s %d" % (ip1, port1, ip2, port2)
+    args = "%s %d %s %d" % (ip1,port1,ip2,port2)
 
     name = "%s %s %d" % (name, ip1, port1)
 
@@ -13,9 +11,4 @@ def xtermCMD(ip1, port1, ip2, port2):
     return cmd % (name, file, args)
 
 
-class myCammand(Cmd):
-    # def __init__(self):
-    #     super().__init__(self);
 
-    def do_EOF(self, line):
-        self.do_stop_network(None)
