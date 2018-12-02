@@ -25,6 +25,7 @@ from mininet.topolib import TreeTopo, TorusTopo
 from myTopo import *
 from mininet.nodelib import LinuxBridge
 from mininet.util import *
+import shutil
 
 IP = "10.0.0.0/8"
 PORT = 9000
@@ -146,7 +147,23 @@ class myCommand(Cmd):
                     break;
             P2PNet.delNode(node);
 
-
+    def do_Execute(self,line):
+        args = line.split()
+        if (len(args) <= 1):
+            print("Expected two or more argument, %d given" % len(args))
+        else:
+            hostName = args[0].strip()
+            node = None;
+            for host in P2PNet.hosts:
+                if host.name == hostName:
+                    node = host;
+                    break;
+            if node !=None:
+                path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
+                with open(os.path.join(path, str(node.IP())), 'w') as f:
+                    f.write(' '.join(args[1:]));
+            else:
+                print("no such host : ",hostName)
 
     def do_CLI(self,Line):
         CLI(P2PNet)
@@ -159,11 +176,19 @@ def delete_log():
             file_path = os.path.join(log_path, file_name)
             os.remove(file_path)
 
+def deleteCMD():
+
+    CMDpath = os.path.dirname(os.getcwd()) + '/bitcoin/CMD/'
+    shutil.rmtree(CMDpath)
+    if not os.path.exists(CMDpath):
+        os.mkdir(CMDpath)
+
 
 if __name__ == '__main__':
 
     try:
         delete_log();
+        deleteCMD();
         setupP2PNet(4,3,netType='star');
         myCommand().cmdloop();
     except SystemExit:

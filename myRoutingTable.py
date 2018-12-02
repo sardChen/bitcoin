@@ -57,6 +57,7 @@ class KadTable(object):
         return HashLen - (self.ID ^ peerID).bit_length();
 
     def printTable(self):
+        print("======================print my routing table============================")
         for i in self.buckets.keys():
             for ID in self.buckets[i].keys():
                 print(ID, " : ", self.buckets[i][ID]);

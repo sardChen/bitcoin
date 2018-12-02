@@ -14,12 +14,17 @@ def setupNode(local_addr, peer_addr):
     #将节点node与IP,port 绑定在一起
     f = loop.create_datagram_endpoint(Node, local_addr=local_addr)
     _, node = loop.run_until_complete(f)
+
+
     node.setLocalAddr(local_addr)
 
     # print("MyId: ", node.ID)
 
     loop.run_until_complete(node.join(peer_addr))
-    loop.run_until_complete(node.nodeCommand())
+
+    loop.create_task(node.nodeCommand())
+
+    loop.create_task(node.fileCommand())
 
     loop.run_forever()
 
