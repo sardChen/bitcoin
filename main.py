@@ -87,9 +87,18 @@ def setupP2PNet(arg1=1, arg2=3, netType="net"):
         time.sleep(1)
 
 
+def delete_log():
+    log_path = os.path.dirname(os.getcwd()) + '/bitcoin/Logs/'
+    if os.path.exists(log_path):
+        for file_name in os.listdir(log_path):
+            file_path = os.path.join(log_path, file_name)
+            os.remove(file_path)
+
+
 if __name__ == '__main__':
 
     try:
+        delete_log()
         setupP2PNet(4, 3, netType='star')
         myCammand().cmdloop()
     except SystemExit:
