@@ -3,6 +3,7 @@
 import hashlib
 import json
 from time import time
+from utils import *
 
 
 class BlockChain(object):
@@ -54,8 +55,10 @@ class BlockChain(object):
         :param amount: <int> Amount
         :return: <int> The index of the Block that will hold this transaction
         """
+        id = str(random_id())
 
         self.current_transactions.append({
+            'id': id,
             'sender': sender,
             'recipient': recipient,
             'amount': amount,
