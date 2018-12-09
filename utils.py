@@ -1,5 +1,6 @@
 import binascii
 import hashlib
+import pickle
 import random
 
 import ecdsa
@@ -8,6 +9,8 @@ import ecdsa
 CURVE = ecdsa.SECP256k1
 
 HashLen = 160;
+
+cur_path = '/home/findns/Projects/Python/bitcoin'
 
 
 def sha1_int(key):
@@ -57,3 +60,14 @@ def verify_msg(pub_key, msg, sign):
 
     return vk.verify(sign, msg.encode())
 
+
+def save_data(data, file_path):
+    file = open(file_path, 'wb')
+    pickle.dump(data, file)
+    file.close()
+
+def get_data(file_path):
+    file = open(file_path, 'rb')
+    data = pickle.load(file)
+    file.close()
+    return data

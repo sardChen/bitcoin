@@ -1,6 +1,8 @@
 import logging
-
+import os.path
 #默认日志目录
+from utils import cur_path
+
 LOGDIR = "logs"
 #默认日志等级
 LOGLEVEL = logging.INFO
@@ -9,6 +11,9 @@ LOGLEVEL = logging.INFO
 
 import os
 import sys
+
+sys.path.append('/home/findns/Projects/mininet')
+
 import traceback
 from cmd import Cmd
 from command import xtermCMD
@@ -92,6 +97,84 @@ def setupP2PNet(arg1=1, arg2=3, netType="net"):
         host.cmd(cmd % (i))
         time.sleep(1)
 
+    path = os.path.join(cur_path, 'CMD')
+    with open(os.path.join(path,"main"), 'w') as f:
+        f.close()
+
+def recordNodesInfo():
+    path = os.path.join(cur_path, 'Logs')
+    with open(os.path.join(path, "main"), 'w') as f:
+        for _, host in enumerate(P2PNet.hosts):
+            f.write(str(host.IP()) +" "+ host.name+"\n")
+
+def readCommnadFromFile():
+    path = os.path.join(cur_path, 'CMD')
+    with open(os.path.join(path, "main"), 'r') as f:
+        lines = f.readlines();
+        if len(lines) > 0:
+            return lines[0].strip();
+        else:
+            return None;
+
+def clearFileCMD():
+    path = os.path.join(cur_path,'CMD')
+    with open(os.path.join(path, "main"), 'w') as f:
+        f.close()
+
+def fileCommand():
+    while True:
+        line = readCommnadFromFile()
+        if line != None:
+            line = line.strip()
+            if len(line) > 0:
+                line = line.split();
+                cmd = line[0];
+                args = line[1:];
+
+                print("2131231231231231321", cmd)
+
+                if cmd in ["delNode"]:
+                    hostName = args[0].strip()
+                    node = None;
+                    for host in P2PNet.hosts:
+                        if host.name == hostName:
+                            node = host;
+                            break;
+                    P2PNet.delNode(node);
+                    recordNodesInfo()
+
+                elif cmd in ["addNode"]:
+                    id = len(P2PNet.hosts)
+
+                    newHost = P2PNet.addHost("h%ds%d" % (id, id))
+
+                    switch = P2PNet.switches[0];
+
+                    P2PNet.addLink(switch, newHost);
+
+                    slink = Link(switch, newHost)
+                    switch.attach(slink);
+                    switch.start(P2PNet.controllers);
+
+                    newHost.configDefault(defaultRoute=newHost.defaultIntf())
+
+                    print(P2PNet.hosts[0].cmd("ping -c1 %s" % newHost.IP()))  # important!!!
+
+                    print(newHost.cmd("ping -c1 10.0.0.1"))
+
+                    cmd = xtermCMD(newHost.IP(), PORT, P2PNet.hosts[0].IP(), PORT)
+
+                    print(cmd)
+
+                    newHost.cmd(cmd % (id))
+
+                    print("Started new node: %s" % newHost)
+
+                    recordNodesInfo()
+
+                clearFileCMD()
+
+        sleep(2)
 
 
 class myCommand(Cmd):
@@ -159,7 +242,7 @@ class myCommand(Cmd):
                     node = host;
                     break;
             if node !=None:
-                path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
+                path = os.path.join(cur_path,'CMD')
                 with open(os.path.join(path, str(node.IP())), 'w') as f:
                     f.write(' '.join(args[2:]));
             else:
@@ -170,15 +253,14 @@ class myCommand(Cmd):
 
 
 def delete_log():
-    log_path = os.path.dirname(os.getcwd()) + '/bitcoin/Logs/'
-    if os.path.exists(log_path):
-        for file_name in os.listdir(log_path):
-            file_path = os.path.join(log_path, file_name)
-            os.remove(file_path)
+    log_path = os.path.join(cur_path,'Logs')
+    shutil.rmtree(log_path)
+    if not os.path.exists(log_path):
+        os.mkdir(log_path)
 
 def deleteCMD():
 
-    CMDpath = os.path.dirname(os.getcwd()) + '/bitcoin/CMD/'
+    CMDpath = os.path.join(cur_path,'CMD')
     shutil.rmtree(CMDpath)
     if not os.path.exists(CMDpath):
         os.mkdir(CMDpath)
@@ -189,7 +271,7 @@ if __name__ == '__main__':
     try:
         delete_log();
         deleteCMD();
-        setupP2PNet(4,3,netType='star');
+        setupP2PNet(9,3,netType='star');
         myCommand().cmdloop();
     except SystemExit:
         pass

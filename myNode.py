@@ -27,15 +27,19 @@ class Node(myRPCProtocol):
         self.BroadCasts = [];
         # self.leger = Leger(self.ID);
 
-        self.logger = self.init_logger(ID)
         self.blockchain = None
         self.local_addr = None
+
+
 
 
 
     def setLocalAddr(self,local_addr):
         self.local_addr = local_addr;
         self.initFileCMD()
+        self.logger = self.init_logger()
+        self.recordbaseInfo()
+
 
     def recordFunctions(self):
         funcs = []
@@ -71,6 +75,7 @@ class Node(myRPCProtocol):
             logging.info("Recived new transaction")
             self.blockchain.current_transactions.append(transaction);
             logging.info(self.blockchain.current_transactions)
+            self.recordTXInfo()
 
 
     @convert2RPC
@@ -82,6 +87,7 @@ class Node(myRPCProtocol):
         IDlist = [x['id'] for x in self.blockchain.chain[-1]['transactions']]
         self.blockchain.removeSomeTX(IDlist)
         logging.info(self.blockchain.chain)
+        self.recordBlockInfo()
 
 
 
@@ -134,6 +140,7 @@ class Node(myRPCProtocol):
             tx_id = self.create_transaction(self.blockchain, self.routingTable.getPeerIDByIP(peer[0]), self.ID, random.randint(1,10))
             self.logger.info('init get transactinon from miner = ')
             self.logger.info(self.blockchain.current_transactions)
+            self.recordTXInfo()
             yield from self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
         except socket.timeout:
             print("Could not get money from node0", peer)
@@ -183,6 +190,7 @@ class Node(myRPCProtocol):
         print('current blockchain = ', self.blockchain.chain)
         self.logger.info('blockchain.node_id = ' + str(self.blockchain.node_id))
         self.logger.info(self.blockchain.chain)
+        self.recordBlockInfo()
 
 
     def mine(self, blockchain, node_identifier):
@@ -197,7 +205,7 @@ class Node(myRPCProtocol):
         blockchain.new_transaction(
             sender="0",
             recipient=node_identifier,
-            amount=1,
+            amount=random.randint(1,10),
         )
 
         # Forge the new Block by adding it to the chain
@@ -212,18 +220,19 @@ class Node(myRPCProtocol):
         }
         return response
 
-    def init_logger(self, ID):
+    def init_logger(self):
         # 第一步，创建一个logger
         logger = logging.getLogger()
         logger.setLevel(logging.INFO)  # Log等级总开关
         # 第二步，创建一个handler，用于写入日志文件
         rq = time.strftime('%Y%m%d%H%M', time.localtime(time.time()))
-        log_path = os.path.dirname(os.getcwd()) + '/bitcoin/Logs/'
+        log_path = os.path.join(cur_path,'Logs',str(self.local_addr[0]))
 
         if not os.path.exists(log_path):
             os.mkdir(log_path)
 
-        log_name = log_path + str(ID) + '.log'
+        log_name = os.path.join(log_path, str(self.ID) + ".log")
+
         logfile = log_name
         fh = logging.FileHandler(logfile, mode='w')
         fh.setLevel(logging.DEBUG)  # 输出到file的log等级的开关
@@ -234,8 +243,38 @@ class Node(myRPCProtocol):
         logger.addHandler(fh)
         return logger
 
+    def recordbaseInfo(self):
+        log_path = os.path.join(cur_path, 'Logs', str(self.local_addr[0]))
+
+        if not os.path.exists(log_path):
+            os.mkdir(log_path)
+
+        baseInfo = os.path.join(log_path, "baseInfo")
+        with open(baseInfo,'w') as f:
+            f.write(str(self.ID)+"\n")
+            f.write(str(self.local_addr)+"\n")
+
+    def recordTXInfo(self):
+        log_path = os.path.join(cur_path, 'Logs', str(self.local_addr[0]))
+
+        if not os.path.exists(log_path):
+            os.mkdir(log_path)
+
+        TXInfo = os.path.join(log_path, "TXInfo")
+        save_data(self.blockchain.current_transactions,TXInfo)
+
+    def recordBlockInfo(self):
+        log_path = os.path.join(cur_path, 'Logs', str(self.local_addr[0]))
+
+        if not os.path.exists(log_path):
+            os.mkdir(log_path)
+
+        BlockInfo = os.path.join(log_path, "BlockInfo")
+        save_data(self.blockchain.chain,BlockInfo)
+
+
     def initFileCMD(self):
-        path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
+        path = os.path.join(cur_path,'CMD')
 
         with open(os.path.join(path,str(self.local_addr[0])), 'w') as f:
             f.close();
@@ -341,7 +380,7 @@ class Node(myRPCProtocol):
 
 
     def printLog(self):
-        path = os.path.dirname(os.getcwd()) + '/bitcoin/Logs'
+        path = os.path.join(cur_path,'Logs')
         with open(os.path.join(path, str(self.ID)+".log"), 'r') as f:
             lines = f.readlines()
             for line in lines:
@@ -349,12 +388,12 @@ class Node(myRPCProtocol):
 
 
     def clearFileCMD(self):
-        path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
+        path = os.path.join(cur_path,'CMD')
         with open(os.path.join(path, str(self.local_addr[0])), 'w') as f:
             f.close()
 
     def readFromFile(self):
-        path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
+        path = os.path.join(cur_path,'CMD')
         with open(os.path.join(path,str(self.local_addr[0])),'r') as f:
             lines = f.readlines();
             if len(lines)>0:
@@ -408,7 +447,9 @@ class Node(myRPCProtocol):
             self.logger.info('after mining, blockchain = ')
             self.logger.info(self.blockchain.chain)
             # broadcast new Blcokchain
+            self.recordBlockInfo()
             await self.postBoardcast(random_id(), 'recordNewBlock', self.ID, self.blockchain.chain[-1]);
+
 
         elif cmd in ["createTx"]:
             IP = args[0];
@@ -418,5 +459,7 @@ class Node(myRPCProtocol):
             tx_id = self.create_transaction(self.blockchain, self.ID, str(peerID), amount)
             self.logger.info('current transactinon = ')
             self.logger.info(self.blockchain.current_transactions)
+            self.recordTXInfo()
             await self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
+
 

@@ -47,14 +47,14 @@ class BlockChain(object):
                 'amount': 999,
             })
 
-
-
         block = {
             'index': len(self.chain) + 1,
             'timestamp': time(),
             'transactions': self.current_transactions,
             'proof': proof,
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
+            'minerID': self.node_id,
+            'minerAmount': self.current_transactions[-1]['amount'],
         }
 
         # Reset the current list of transactions

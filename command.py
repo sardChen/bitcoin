@@ -1,8 +1,14 @@
+import os
+
+from utils import cur_path
 
 
 def xtermCMD(ip1, port1, ip2, port2):
     name="Host_%d: "
+
     file = "setupNode.py"
+    file = os.path.join(cur_path, file)
+
     args = "%s %d %s %d" % (ip1,port1,ip2,port2)
 
     name = "%s %s %d" % (name, ip1, port1)
