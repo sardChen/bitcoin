@@ -6,12 +6,10 @@ from myRoutingTable import KadTable;
 
 import logging  # 引入logging模块
 import os.path
-# from watchdog.observers import Observer
-# from watchdog.events import *
+#from watchdog.events import *
 import time
 
 from myleger import Leger;
-
 
 class Node(myRPCProtocol):
 
@@ -33,7 +31,9 @@ class Node(myRPCProtocol):
         self.blockchain = None
         self.local_addr = None
 
-    def setLocalAddr(self, local_addr):
+
+
+    def setLocalAddr(self,local_addr):
         self.local_addr = local_addr;
         self.initFileCMD()
 
@@ -42,19 +42,22 @@ class Node(myRPCProtocol):
         funcs.extend(myRPCProtocol.__dict__.values())
         funcs.extend(Node.__dict__.values())
 
+
         return {
             func.funcName: func.recall_function
             for func in funcs if hasattr(func, 'funcName')
         }
 
+
     @convert2RPC
-    def ping(self, peer, peerID):
+    def ping(self,peer,peerID):
         print(self.ID, "handling ping", peer, peerID)
         return (self.ID, peerID)
 
+
     @convert2RPC
     def findNodes(self, peer, peerID):
-        self.routingTable.add(peerID, peer);
+        self.routingTable.add(peerID,peer);
         return self.routingTable.getKpeers(peerID);
 
     @convert2RPC
@@ -62,9 +65,33 @@ class Node(myRPCProtocol):
         print("Recived boardCast message!!!!", peer, peerId, args)
 
     @convert2RPC
+    def recordTX(self, peer, peerId, transaction):
+        print("Recived new transaction!!!!", peer, peerId, transaction)
+        if transaction['id'] not in [x['id'] for x in self.blockchain.current_transactions]:
+            logging.info("Recived new transaction")
+            self.blockchain.current_transactions.append(transaction);
+            logging.info(self.blockchain.current_transactions)
+
+
+    @convert2RPC
+    def recordNewBlock(self, peer, peerId, newBlock):
+        print("Recived new Block!!!!", peer, peerId, newBlock)
+        #TODO record new block right now!!
+        logging.info("Recived new Block")
+        self.blockchain.chain.append(newBlock);
+        IDlist = [x['id'] for x in self.blockchain.chain[-1]['transactions']]
+        self.blockchain.removeSomeTX(IDlist)
+        logging.info(self.blockchain.chain)
+
+
+
+
+    @convert2RPC
     def download_peer_blockchain(self, peer, peerID):
         # print(self.ID, "downloading blockchain from", peer, peerID)
         return self.blockchain
+
+
 
     @asyncio.coroutine
     def updateRoutingTable(self, peer):
@@ -75,11 +102,12 @@ class Node(myRPCProtocol):
 
         # self.routingTable.printTable();
 
+
     @asyncio.coroutine
     def join(self, peer):
 
         # print(self.ID, "Pinging ", peer)
-        print("myIP: ", self.local_addr, " myID: ", self.ID)
+        print("myIP: ",self.local_addr," myID: ",self.ID)
 
         try:
             yield from self.ping(peer, self.ID)
@@ -95,11 +123,22 @@ class Node(myRPCProtocol):
             print("Could not updateRoutingTable", peer)
             return
 
+
         try:
             yield from self.download_blockchain_all();
         except socket.timeout:
             print("Could not download blockchain", peer)
             return
+
+        try:
+            tx_id = self.create_transaction(self.blockchain, self.routingTable.getPeerIDByIP(peer[0]), self.ID, random.randint(1,10))
+            self.logger.info('init get transactinon from miner = ')
+            self.logger.info(self.blockchain.current_transactions)
+            yield from self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
+        except socket.timeout:
+            print("Could not get money from node0", peer)
+            return
+
 
         # test boardcast!
         # if(len(self.routingTable.getNeighborhoods())==3):
@@ -117,27 +156,34 @@ class Node(myRPCProtocol):
         #         self.logger.info('after mining, blockchain = ')
         #         self.logger.info(self.blockchain.chain)
 
+
+
+
+
     @asyncio.coroutine
     def download_blockchain_all(self):
         peers = self.routingTable.getNeighborhoods()
 
         if len(peers) == 0:
             # genesis block
-            self.blockchain = BlockChain()
+            self.blockchain = BlockChain(self.ID)
         else:
             for peerID, peer in peers.items():
-                reveive_blockchain = yield from self.download_peer_blockchain(peers[peerID], self.ID)
+                receive_blockchain = yield from self.download_peer_blockchain(peers[peerID], self.ID)
 
                 if self.blockchain == None:
-                    self.blockchain = reveive_blockchain
-                elif len(reveive_blockchain.chain) > len(self.blockchain.chain):
-                    self.blockchain = reveive_blockchain
+                    self.blockchain = receive_blockchain
+                    self.blockchain.set_node_id(self.ID)
+                elif len(receive_blockchain.chain) > len(self.blockchain.chain):
+                    self.blockchain = receive_blockchain
+                    self.blockchain.set_node_id(self.ID)
 
                     # print('blockchain received from', peerID, peer, len(reveive_blockchain.chain))
 
         print('current blockchain = ', self.blockchain.chain)
-        self.logger.info('current blockchain = ')
+        self.logger.info('blockchain.node_id = ' + str(self.blockchain.node_id))
         self.logger.info(self.blockchain.chain)
+
 
     def mine(self, blockchain, node_identifier):
         # We run the proof of work algorithm to get the next proof...
@@ -191,19 +237,22 @@ class Node(myRPCProtocol):
     def initFileCMD(self):
         path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
 
-        with open(os.path.join(path, str(self.local_addr[0])), 'w') as f:
+        with open(os.path.join(path,str(self.local_addr[0])), 'w') as f:
             f.close();
+
 
     def create_transaction(self, blockchain, sender, recipient, amount):
         # Create a new Transaction
         tx_index = blockchain.new_transaction(sender, recipient, amount)
         return tx_index
 
+
     @asyncio.coroutine
     def pingAll(self, peer, peerID):
         peers = self.routingTable.getNeighborhoods();
         for peerID, peer in peers.keys():
             yield from self.ping(peers[peerID], self.ID);
+
 
     @asyncio.coroutine
     def postBoardcast(self, messageID, funcName, *args):
@@ -218,18 +267,26 @@ class Node(myRPCProtocol):
             for peer in peers.values():
                 self.transport.sendto(message, peer)
 
-    # 收到的所有请求,更新路由表
+
+
+
+#收到的所有请求,更新路由表
     # 处理请求
     def handleRequest(self, peer, messageID, funcName, args, kwargs):
         peerID = args[0];
-        self.routingTable.add(peerID, peer);
+        self.routingTable.add(peerID,peer);
         super(Node, self).handleRequest(peer, messageID, funcName, args, kwargs);
+
+
+
 
     # 处理回复
     def handleReply(self, peer, messageID, response):
         peerID, response = response;
-        self.routingTable.add(peerID, peer);
+        self.routingTable.add(peerID,peer);
         super(Node, self).handleReply(peer, messageID, response);
+
+
 
     # 处理广播
     def handleBroadcast(self, peer, messageID, funcName, *args):
@@ -239,15 +296,18 @@ class Node(myRPCProtocol):
         if messageID not in self.BroadCasts:
             self.BroadCasts.append(messageID);
             self.postBoardcast(messageID, funcName, args);
-            super(Node, self).handleBroadcast(peer, messageID, funcName, *args);
+            super(Node,self).handleBroadcast(peer, messageID, funcName, *args);
 
     # 处理超时
     def handletimeout(self, messageID, args, kwargs):
         peerID = args[0];
         self.routingTable.remove(peerID);
-        super(Node, self).handletimeout(messageID, args, kwargs);
+        super(Node, self).handletimeout( messageID, args, kwargs);
 
-    # =================监听命令行=====================#
+
+
+
+#=================监听命令行=====================#
     async def nodeCommand(self):
 
         while True:
@@ -257,9 +317,10 @@ class Node(myRPCProtocol):
             if not line:
                 continue;
 
+
             await self.dealCMD(line)
 
-    # =================监听文件命令行=====================#
+# =================监听文件命令行=====================#
 
     async def fileCommand(self):
         while True:
@@ -272,15 +333,20 @@ class Node(myRPCProtocol):
 
             await asyncio.sleep(2)
 
+
+
+
     def printHelpList(self):
         print("==========this is a help list!==========")
 
+
     def printLog(self):
         path = os.path.dirname(os.getcwd()) + '/bitcoin/Logs'
-        with open(os.path.join(path, str(self.ID) + ".log"), 'r') as f:
+        with open(os.path.join(path, str(self.ID)+".log"), 'r') as f:
             lines = f.readlines()
             for line in lines:
                 print(line)
+
 
     def clearFileCMD(self):
         path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
@@ -289,21 +355,18 @@ class Node(myRPCProtocol):
 
     def readFromFile(self):
         path = os.path.dirname(os.getcwd()) + '/bitcoin/CMD'
-        with open(os.path.join(path, str(self.local_addr[0])), 'r') as f:
+        with open(os.path.join(path,str(self.local_addr[0])),'r') as f:
             lines = f.readlines();
-            if len(lines) > 0:
+            if len(lines)>0:
                 return lines[0].strip();
             else:
                 return None;
 
-    async def dealCMD(self, line):
+    async def dealCMD(self,line):
         line = line.split();
 
         cmd = line[0];
         args = line[1:];
-
-        print(cmd)
-        print(args)
 
         if cmd in ["?", "help"]:
             self.printHelpList();
@@ -312,7 +375,7 @@ class Node(myRPCProtocol):
             print("NodeId : ", self.ID);
 
         elif cmd in ["ip"]:
-            print("<ip,port> ", self.local_addr)
+            print("<ip,port> ",self.local_addr)
 
         elif cmd in ["showHashTable"]:
             self.routingTable.printTable();
@@ -321,8 +384,8 @@ class Node(myRPCProtocol):
             self.printLog();
 
         elif cmd in ["ping"]:
-            peerID = int(args[0]);
-            peer = self.routingTable.getPeerById(peerID)
+            IP = args[0];
+            peer = self.routingTable.getPeerByIP(IP)
             if peer != None:
                 try:
                     await self.ping(peer, self.ID);
@@ -330,7 +393,7 @@ class Node(myRPCProtocol):
                     print("Could not ping %r", peer)
                     return
             else:
-                print("peerID : ", peerID, " not exist!");
+                print("peerIP : ", IP, " not exist!");
 
         elif cmd in ["testBoardCast"]:
             try:
@@ -338,26 +401,22 @@ class Node(myRPCProtocol):
             except socket.timeout:
                 print(self.ID, ": could not postBoardcast")
                 return
-
         elif cmd in ["mine"]:
             response = self.mine(self.blockchain, self.ID)
+            # IDlist = [x.id for x in self.blockchain.chain[-1]['transactions']]
+            # self.blockchain.removeSomeTX(IDlist)
             self.logger.info('after mining, blockchain = ')
             self.logger.info(self.blockchain.chain)
-
-            # TODO broadcast new Blcokchain
-
+            # broadcast new Blcokchain
+            await self.postBoardcast(random_id(), 'recordNewBlock', self.ID, self.blockchain.chain[-1]);
 
         elif cmd in ["createTx"]:
-            # TODO hostname to peerID
-            # h2s1 to 233373687532678203548246483402907520024402971895
-            peerID = int(args[0])
+            IP = args[0];
+            amount = int(args[1])
+            peerID = self.routingTable.getPeerIDByIP(IP)
             # check for enough money
-            tx_id = self.create_transaction(self.blockchain, self.ID, str(peerID), len(self.blockchain.chain))
+            tx_id = self.create_transaction(self.blockchain, self.ID, str(peerID), amount)
             self.logger.info('current transactinon = ')
             self.logger.info(self.blockchain.current_transactions)
-
-            # TODO broadcast transaction using postBoardcast
-
-
-
+            await self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
 

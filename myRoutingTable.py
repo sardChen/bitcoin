@@ -28,6 +28,20 @@ class KadTable(object):
             return bucket[peerID];
         return None;
 
+    def getPeerByIP(self,IP):
+        for i in self.buckets.keys():
+            for ID in self.buckets[i].keys():
+                if self.buckets[i][ID][0] == IP:
+                    return self.buckets[i][ID];
+        return None;
+
+    def getPeerIDByIP(self,IP):
+        for i in self.buckets.keys():
+            for ID in self.buckets[i].keys():
+                if self.buckets[i][ID][0] == IP:
+                    return ID;
+        return None;
+
     def remove(self, peerID):
         bucket = self.buckets[self.distance(peerID)];
         if peerID in bucket:

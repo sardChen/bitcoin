@@ -7,13 +7,17 @@ from utils import *
 
 
 class BlockChain(object):
-    def __init__(self):
+    def __init__(self,ID):
         self.chain = []
         self.current_transactions = []
         self.nodes = set()
+        self.set_node_id(ID)
 
         # Create the genesis block
         self.new_block(previous_hash=1, proof=100)
+
+    def set_node_id(self, node_id):
+        self.node_id = node_id
 
     def register_node(self, address):
         """
@@ -33,6 +37,18 @@ class BlockChain(object):
         :return: <dict> New Block
         """
 
+        if len(self.chain) == 0:
+            id = str(random_id())
+
+            self.current_transactions.append({
+                'id': id,
+                'sender': "0",
+                'recipient': self.node_id,
+                'amount': 999,
+            })
+
+
+
         block = {
             'index': len(self.chain) + 1,
             'timestamp': time(),
@@ -42,6 +58,7 @@ class BlockChain(object):
         }
 
         # Reset the current list of transactions
+
         self.current_transactions = []
 
         self.chain.append(block)
@@ -55,10 +72,11 @@ class BlockChain(object):
         :param amount: <int> Amount
         :return: <int> The index of the Block that will hold this transaction
         """
+
         id = str(random_id())
 
         self.current_transactions.append({
-            'id': id,
+            'id' : id,
             'sender': sender,
             'recipient': recipient,
             'amount': amount,
@@ -182,6 +200,17 @@ class BlockChain(object):
             return True
 
         return False
+
+
+    def removeSomeTX(self,IDlist):
+        print("before remove: ",len(self.current_transactions))
+        tmp_TXs = []
+        for tx in self.current_transactions:
+            if tx['id'] not in IDlist:
+                tmp_TXs.append(tx)
+        self.current_transactions = tmp_TXs
+        print("after remove: ", len(self.current_transactions))
+
 
 
 def new_transaction(blockchain, sender, recipient, amount):
