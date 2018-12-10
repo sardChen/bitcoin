@@ -88,6 +88,7 @@ class Node(myRPCProtocol):
         self.blockchain.removeSomeTX(IDlist)
         logging.info(self.blockchain.chain)
         self.recordBlockInfo()
+        self.recordTXInfo()
 
 
 
@@ -123,8 +124,8 @@ class Node(myRPCProtocol):
 
         try:
             yield from self.updateRoutingTable(peer);
-            # print("======================print my routing table============================")
-            # self.routingTable.printTable();
+            print("======================print my routing table============================")
+            self.routingTable.printTable();
         except socket.timeout:
             print("Could not updateRoutingTable", peer)
             return
@@ -448,6 +449,7 @@ class Node(myRPCProtocol):
             self.logger.info(self.blockchain.chain)
             # broadcast new Blcokchain
             self.recordBlockInfo()
+            self.recordTXInfo()
             await self.postBoardcast(random_id(), 'recordNewBlock', self.ID, self.blockchain.chain[-1]);
 
 

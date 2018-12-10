@@ -108,8 +108,9 @@
 			<div class="panel-heading">
                 {{ host_name }}节点区块链信息
             </div>
+        {% for block in block_info %}
 			<div class="panel-body">
-                {% for block in block_info %}
+
                     <div class="col-lg-1">
 						<div class="form-group">
                                 <label style="padding-top:5px">区块ID</label>
@@ -142,9 +143,9 @@
                                 {% endfor %}
                         </div>
 					</div>
-                {% endfor %}
+
             </div>
-			
+			{% endfor %}
             <div class="panel-footer">
             </div>
         </div>

@@ -196,7 +196,7 @@ def delete(request):
     with open(os.path.join(cur_path, 'CMD/main'), 'w') as f:
         f.write('delNode '+host_name+'\n')
 
-    sleep(1)
+    sleep(3)
 
     # star network
     p2p_json = ['[\n', '{"source":"s1","target":"s1","region":"switch1"},\n']
@@ -212,6 +212,8 @@ def delete(request):
             p2p_json.append(p2p_line)
 
     p2p_json.append(']\n')
+
+    print(p2p_json)
 
     with open(os.path.join(cur_path, 'bitcoin/demo/static/data/p2p.json'), 'w') as f:
         f.writelines(p2p_json)
@@ -259,6 +261,11 @@ def delete(request):
 def get_node_info(request):
     host_name = request.GET.get('hostname')
     request.session['hostname'] = host_name
+
+    if host_name[0] == 's':
+        host_name = 'h1s1'
+        request.session['hostname'] = 'h1s1'
+
     host_ip = ""
     host_id = ""
     host_addr = ""
