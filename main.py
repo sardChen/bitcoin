@@ -12,7 +12,7 @@ LOGLEVEL = logging.INFO
 import os
 import sys
 
-sys.path.append('/home/findns/Projects/mininet')
+#sys.path.append('/home/findns/Projects/mininet')
 
 import traceback
 from cmd import Cmd
@@ -130,8 +130,6 @@ def fileCommand():
                 line = line.split();
                 cmd = line[0];
                 args = line[1:];
-
-                print("2131231231231231321", cmd)
 
                 if cmd in ["delNode"]:
                     hostName = args[0].strip()
@@ -271,7 +269,7 @@ if __name__ == '__main__':
     try:
         delete_log();
         deleteCMD();
-        setupP2PNet(9,3,netType='star');
+        setupP2PNet(4,3,netType='star');
         myCommand().cmdloop();
     except SystemExit:
         pass

@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-
+import asyncio
 import hashlib
 import json
 from time import time
 from utils import *
+from collections import defaultdict
 
 
 class BlockChain(object):
@@ -15,6 +16,7 @@ class BlockChain(object):
 
         # Create the genesis block
         self.new_block(previous_hash=1, proof=100)
+        self.stop = False;
 
     def set_node_id(self, node_id):
         self.node_id = node_id
@@ -102,25 +104,35 @@ class BlockChain(object):
         # Returns the last Block in the chain
         return self.chain[-1]
 
+    @asyncio.coroutine
     def proof_of_work(self, last_proof):
         """
         简单的工作量证明:
-         - 查找一个 p' 使得 hash(pp') 以4个0开头
+         - 查找一个 p' 使得 hash(pp') 以6个0开头
          - p 是上一个块的证明,  p' 是当前的证明
         :param last_proof: <int>
         :return: <int>
         """
 
         proof = 0
+        count=0
         while self.valid_proof(last_proof, proof) is False:
-            proof += 1
+            tmp = random.randint(1,3)
+            # print(proof)
+            proof += tmp
+            count+=1
+            if count==5:
+                yield from asyncio.sleep(1)
+                count=0
+            if self.stop == True:
+                break;
 
         return proof
 
     @staticmethod
     def valid_proof(last_proof, proof):
         """
-        验证证明: 是否hash(last_proof, proof)以4个0开头?
+        验证证明: 是否hash(last_proof, proof)以6个0开头?
         :param last_proof: <int> Previous Proof
         :param proof: <int> Current Proof
         :return: <bool> True if correct, False if not.
@@ -134,22 +146,35 @@ class BlockChain(object):
         guess_hash = hashlib.sha256(guess).hexdigest()
         return guess_hash[:2] == "00"
 
-    def valid_chain(self, chain):
+    # check if chain has fork
+    def check_chain(self, chain):
         """
-        Determine if a given blockchain is valid
-        :param chain: <list> A blockchain
-        :return: <bool> True if valid, False if not
-        """
+                    Determine if a given blockchain is valid
+                    :param chain: <list> A blockchain
+                    :return: <bool> True if valid, False if not
+                    """
 
         last_block = chain[0]
         current_index = 1
+        UTXO = defaultdict(int)
+        tx_id_set = set()
+
+        for tx in last_block['transactions']:
+            UTXO[tx['sender']] -= int(tx['amount'])
+            UTXO[tx['recipient']] += int(tx['amount'])
+
+            if tx['id'] not in tx_id_set:
+                tx_id_set.add(tx['id'])
+            else:
+                return False
 
         while current_index < len(chain):
             block = chain[current_index]
-            print(last_block)
-            print(block)
-            print("\n-----------\n")
+            # print(last_block)
+            # print(block)
+            # print("\n-----------\n")
             # Check that the hash of the block is correct
+            # check fork
             if block['previous_hash'] != self.hash(last_block):
                 return False
 
@@ -157,49 +182,26 @@ class BlockChain(object):
             if not self.valid_proof(last_block['proof'], block['proof']):
                 return False
 
+            for tx in block['transactions']:
+                UTXO[tx['sender']] -= int(tx['amount'])
+                UTXO[tx['recipient']] += int(tx['amount'])
+
+                if tx['id'] not in tx_id_set:
+                    tx_id_set.add(tx['id'])
+                else:
+                    return False
+
             last_block = block
             current_index += 1
 
+        for id in UTXO:
+            if id == '0':
+                continue
+            elif UTXO[id] < 0:
+                return False
+
         return True
 
-    def get_chain_from_neighbours(self):
-        # TODO get chain from others
-        pass
-
-
-    def resolve_conflicts(self):
-        """
-        共识算法解决冲突
-        使用网络中最长的链.
-        :return: <bool> True 如果链被取代, 否则为False
-        """
-
-        neighbours = self.nodes
-        new_chain = None
-
-        # We're only looking for chains longer than ours
-        max_length = len(self.chain)
-
-        # Grab and verify the chains from all the nodes in our network
-        for node in neighbours:
-            # response = requests.get(f'http://{node}/chain')
-            response = self.get_chain_from_neighbours()
-
-            if response.status_code == 200:
-                length = response.json()['length']
-                chain = response.json()['chain']
-
-                # Check if the length is longer and the chain is valid
-                if length > max_length and self.valid_chain(chain):
-                    max_length = length
-                    new_chain = chain
-
-        # Replace our chain if we discovered a new, valid chain longer than ours
-        if new_chain:
-            self.chain = new_chain
-            return True
-
-        return False
 
 
     def removeSomeTX(self,IDlist):
@@ -212,107 +214,11 @@ class BlockChain(object):
         print("after remove: ", len(self.current_transactions))
 
 
-
-def new_transaction(blockchain, sender, recipient, amount):
-    # Create a new Transaction
-    index = blockchain.new_transaction(sender, recipient, amount)
-
-    return index
-
-
-def mine(blockchain, node_identifier):
-    # We run the proof of work algorithm to get the next proof...
-    last_block = blockchain.last_block
-    last_proof = last_block['proof']
-    proof = blockchain.proof_of_work(last_proof)
-
-    # 给工作量证明的节点提供奖励.
-    # 发送者为 "0" 表明是新挖出的币
-    blockchain.new_transaction(
-        sender="0",
-        recipient=node_identifier,
-        amount=1,
-    )
-
-    # Forge the new Block by adding it to the chain
-    block = blockchain.new_block(proof)
-
-    response = {
-        'message': "New Block Forged",
-        'index': block['index'],
-        'transactions': block['transactions'],
-        'proof': block['proof'],
-        'previous_hash': block['previous_hash'],
-    }
-    return response
+    def getAllTX(self):
+        txIds=[]
+        for block in self.chain:
+            for tx in block['transactions']:
+                txIds.append(tx['id'])
+        return txIds
 
 
-def full_chain(blockchain):
-    response = {
-        'chain': blockchain.chain,
-        'length': len(blockchain.chain),
-    }
-    return response
-
-
-if __name__ == '__main__':
-    # Instantiate the Blockchain
-    blockchain = BlockChain()
-
-    mine_msg = mine(blockchain, '192.168.0.1')
-    print('mine_msg', mine_msg)
-
-    tx_msg = new_transaction(blockchain, '192.168.0.1', '192.168.0.121', 5)
-    print('tx_msg', tx_msg)
-
-    mine_msg = mine(blockchain, '192.168.0.2')
-    print('mine_msg', mine_msg)
-
-    full_msg = full_chain(blockchain)
-    print('full_msg', full_msg)
-
-    '''
-    {
-  'chain': [
-    {
-      'index': 1,
-      'proof': 100,
-      'transactions': [],
-      'timestamp': 1543413451.6612592,
-      'previous_hash': 1
-    },
-    {
-      'index': 2,
-      'proof': 226,
-      'transactions': [
-        {
-          'sender': '0',
-          'recipient': '192.168.0.1',
-          'amount': 1
-        }
-      ],
-      'timestamp': 1543413451.6612592,
-      'previous_hash': '938862bd1bfb9941153d7dd19412281f0ffc1423a1cd382b1078f78fc0491dc7'
-    },
-    {
-      'index': 3,
-      'proof': 346,
-      'transactions': [
-        {
-          'sender': '192.168.0.1',
-          'recipient': '192.168.0.121',
-          'amount': 5
-        },
-        {
-          'sender': '0',
-          'recipient': '192.168.0.2',
-          'amount': 1
-        }
-      ],
-      'timestamp': 1543413451.662258,
-      'previous_hash': 'c3517dcb7efbd6cfabe017980bfc3e4635b5e35301848f20b9bdb5cc932a3169'
-    }
-  ],
-  'length': 3
-    }
-    '''

@@ -63,11 +63,11 @@
                         </div>
 					</div>
 					<div class="col-lg-3">
-						<button class="btn btn-danger"  onclick="mine("h1s1")"> 执行挖矿 </button >
+						<button class="btn btn-danger"  onclick="mine('h1s1')"> 执行挖矿 </button >
 						<br></br>
 						<input class="form-control"  style="width:45%; display:inline" placeholder="对方节点">
 						<input class="form-control"  style="width:45%; display:inline" placeholder="交易额">
-						<button class="btn btn-danger"  onclick="mine("h1s1")"> 发送交易 </button >
+						<button class="btn btn-danger"  onclick="createTX('h1s1')"> 发送交易 </button >
 					</div>
 					
 					
@@ -262,9 +262,26 @@
             }
 			
 			function click() {
-				alert(d3.select(this).select("text").text());
+				//alert(d3.select(this).select("text").text());
+				location.reload();
             }
         });
+		
+		function addNode() {
+			alert("addNode");
+		}
+		
+		function delNode() {
+			alert("delNode");
+		}
+		
+		function mine(name) {
+			alert(name);
+		}
+		
+		function createTX(name) {
+			alert(name);
+		}
 
 
     </script>

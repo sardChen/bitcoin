@@ -22,6 +22,8 @@ def setupNode(local_addr, peer_addr):
 
     loop.run_until_complete(node.join(peer_addr))
 
+    loop.create_task(node.startMine())
+
     loop.create_task(node.nodeCommand())
 
     loop.create_task(node.fileCommand())

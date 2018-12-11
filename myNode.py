@@ -81,11 +81,20 @@ class Node(myRPCProtocol):
     @convert2RPC
     def recordNewBlock(self, peer, peerId, newBlock):
         print("Recived new Block!!!!", peer, peerId, newBlock)
-        #TODO record new block right now!!
         logging.info("Recived new Block")
-        self.blockchain.chain.append(newBlock);
-        IDlist = [x['id'] for x in self.blockchain.chain[-1]['transactions']]
+        self.blockchain.stop = True;
+
+        #TODO 判断新块是否有冲突, 有冲突从其他人拉去区块,否则直接更新
+        tmp_chain = [x for x in self.blockchain.chain]
+        tmp_chain.append(newBlock)
+        if self.blockchain.check_chain(tmp_chain):
+            self.blockchain.chain.append(newBlock);
+        else:
+            self.resolve_conflicts()
+
+        IDlist = self.blockchain.getAllTX()
         self.blockchain.removeSomeTX(IDlist)
+
         logging.info(self.blockchain.chain)
         self.recordBlockInfo()
         self.recordTXInfo()
@@ -124,8 +133,8 @@ class Node(myRPCProtocol):
 
         try:
             yield from self.updateRoutingTable(peer);
-            print("======================print my routing table============================")
-            self.routingTable.printTable();
+            # print("======================print my routing table============================")
+            # self.routingTable.printTable();
         except socket.timeout:
             print("Could not updateRoutingTable", peer)
             return
@@ -137,6 +146,7 @@ class Node(myRPCProtocol):
             print("Could not download blockchain", peer)
             return
 
+        #默认启动后找第一个人要钱
         try:
             tx_id = self.create_transaction(self.blockchain, self.routingTable.getPeerIDByIP(peer[0]), self.ID, random.randint(1,10))
             self.logger.info('init get transactinon from miner = ')
@@ -165,9 +175,6 @@ class Node(myRPCProtocol):
         #         self.logger.info(self.blockchain.chain)
 
 
-
-
-
     @asyncio.coroutine
     def download_blockchain_all(self):
         peers = self.routingTable.getNeighborhoods()
@@ -177,16 +184,17 @@ class Node(myRPCProtocol):
             self.blockchain = BlockChain(self.ID)
         else:
             for peerID, peer in peers.items():
-                receive_blockchain = yield from self.download_peer_blockchain(peers[peerID], self.ID)
+                try:
+                    receive_blockchain = yield from self.download_peer_blockchain(peers[peerID], self.ID)
+                    if self.blockchain == None:
+                        self.blockchain = receive_blockchain
+                        self.blockchain.set_node_id(self.ID)
+                    elif len(receive_blockchain.chain) > len(self.blockchain.chain):
+                        self.blockchain = receive_blockchain
+                        self.blockchain.set_node_id(self.ID)
+                except socket.timeout:
+                    print("Could not download_peer_blockchain", peers[peerID])
 
-                if self.blockchain == None:
-                    self.blockchain = receive_blockchain
-                    self.blockchain.set_node_id(self.ID)
-                elif len(receive_blockchain.chain) > len(self.blockchain.chain):
-                    self.blockchain = receive_blockchain
-                    self.blockchain.set_node_id(self.ID)
-
-                    # print('blockchain received from', peerID, peer, len(reveive_blockchain.chain))
 
         print('current blockchain = ', self.blockchain.chain)
         self.logger.info('blockchain.node_id = ' + str(self.blockchain.node_id))
@@ -194,23 +202,64 @@ class Node(myRPCProtocol):
         self.recordBlockInfo()
 
 
-    def mine(self, blockchain, node_identifier):
+    @asyncio.coroutine
+    def resolve_conflicts(self):
+
+        logging.info("In resolve conflicts!")
+        print("In resolve conflicts!")
+
+        peers = self.routingTable.getNeighborhoods()
+        new_chain = None
+
+        # We're only looking for chains longer than ours
+        max_length = len(self.blockchain.chain)
+
+        # Grab and verify the chains from all the nodes in our network
+        for peerID, peer in peers.items():
+            try:
+                receive_blockchain = yield from self.download_peer_blockchain(peers[peerID], self.ID)
+                chain = receive_blockchain.chain
+                length = len(chain)
+
+                # Check if the length is longer and the chain is valid
+                if length > max_length and self.blockchain.check_chain(chain):
+                    max_length = length
+                    new_chain = chain
+            except socket.timeout:
+                print("Could not download_peer_blockchain in resolve_conflicts", peers[peerID])
+
+        # Replace our chain if we discovered a new, valid chain longer than ours
+        if new_chain:
+            self.blockchain.chain = new_chain
+            self.blockchain.set_node_id(self.ID)
+            self.logger.info('blockchain.node_id = ' + str(self.blockchain.node_id))
+            self.logger.info(self.blockchain.chain)
+            self.recordBlockInfo()
+            return True
+
+        return False
+
+
+    @asyncio.coroutine
+    def mine(self):
         # We run the proof of work algorithm to get the next proof...
-        last_block = blockchain.last_block
+        last_block = self.blockchain.last_block
         last_proof = last_block['proof']
         # use proof of work
-        proof = blockchain.proof_of_work(last_proof)
+        proof = yield from self.blockchain.proof_of_work(last_proof)
+        if self.blockchain.stop == True:
+            return None;
 
         # 给工作量证明的节点提供奖励.
         # 发送者为 "0" 表明是新挖出的币
-        blockchain.new_transaction(
+        self.blockchain.new_transaction(
             sender="0",
-            recipient=node_identifier,
+            recipient=self.ID,
             amount=random.randint(1,10),
         )
 
         # Forge the new Block by adding it to the chain
-        block = blockchain.new_block(proof)
+        block = self.blockchain.new_block(proof)
 
         response = {
             'message': "New Block Forged",
@@ -220,6 +269,31 @@ class Node(myRPCProtocol):
             'previous_hash': block['previous_hash'],
         }
         return response
+
+    @asyncio.coroutine
+    def startMine(self):
+        while True:
+            response = yield from self.mine()
+            if response!=None:
+                print(self.ID, ' has mined new block ')
+                self.logger.info('after mining, blockchain = ')
+                self.logger.info(self.blockchain.chain)
+                # broadcast new Blcokchain
+                self.recordBlockInfo()
+                self.recordTXInfo()
+                yield from self.postBoardcast(random_id(), 'recordNewBlock', self.ID, self.blockchain.chain[-1]);
+            else:
+                print('This new block has been mined by others')
+                self.logger.info('This blockchain has been mined by others')
+            #每当挖完矿或者别人挖到矿时,等待一段时间,等所有消息处理完毕
+            yield from asyncio.sleep(30)
+            self.blockchain.stop=False;
+
+
+    def create_transaction(self, blockchain, sender, recipient, amount):
+        # Create a new Transaction
+        tx_index = blockchain.new_transaction(sender, recipient, amount)
+        return tx_index
 
     def init_logger(self):
         # 第一步，创建一个logger
@@ -281,17 +355,16 @@ class Node(myRPCProtocol):
             f.close();
 
 
-    def create_transaction(self, blockchain, sender, recipient, amount):
-        # Create a new Transaction
-        tx_index = blockchain.new_transaction(sender, recipient, amount)
-        return tx_index
 
 
     @asyncio.coroutine
     def pingAll(self, peer, peerID):
         peers = self.routingTable.getNeighborhoods();
         for peerID, peer in peers.keys():
-            yield from self.ping(peers[peerID], self.ID);
+            try:
+                yield from self.ping(peers[peerID], self.ID);
+            except socket.timeout:
+                print("pingAll timeout %r", peer)
 
 
     @asyncio.coroutine
@@ -305,7 +378,10 @@ class Node(myRPCProtocol):
             peers = self.routingTable.getNeighborhoods();
 
             for peer in peers.values():
-                self.transport.sendto(message, peer)
+                try:
+                    self.transport.sendto(message, peer)
+                except socket.timeout:
+                    print("transport sendto timeout %r", peer)
 
 
 
