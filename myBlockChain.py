@@ -222,3 +222,10 @@ class BlockChain(object):
         return txIds
 
 
+    def get_all_tx(self):
+        txs=[]
+        for block in self.chain:
+            for tx in block['transactions']:
+                txs.append(tx)
+        return txs
+

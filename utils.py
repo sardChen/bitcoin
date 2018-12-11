@@ -10,7 +10,8 @@ CURVE = ecdsa.SECP256k1
 
 HashLen = 160;
 
-cur_path = '/root/PycharmProjects/bitcoin'
+# cur_path = '/root/PycharmProjects/bitcoin'
+cur_path = '/home/findns/Projects/Python/bitcoin'
 
 
 def sha1_int(key):

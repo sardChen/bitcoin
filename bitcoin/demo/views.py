@@ -1,80 +1,13 @@
+import sys
 import threading
 
 from django.shortcuts import render
-
-from uuid import uuid4
-
-from django.http import HttpResponse
-
-import sys
-
 from utils import get_data
 
 sys.path.append('../')
 
 from main import *
 
-
-# node_identifier = str(uuid4()).replace('-', '')
-#
-# # Instantiate the Blockchain
-# blockchain = BlockChain('123')
-#
-# def mine(request):
-#     last_block = blockchain.last_block
-#     last_proof = last_block['proof']
-#     proof = blockchain.proof_of_work(last_proof)
-#     print(proof)
-#     blockchain.new_transaction(
-#          sender="0",
-#          recipient=node_identifier,
-#          amount=1,
-#      )
-#
-#      # Forge the new Block by adding it to the chain
-#     block = blockchain.new_block(proof)
-#
-#     response = {
-#          'message': "New Block Forged",
-#          'index': block['index'],
-#          'transactions': block['transactions'],
-#          'proof': block['proof'],
-#          'previous_hash': block['previous_hash'],
-#     }
-#     print(response)
-#     return HttpResponse(json.dumps(response))
-#
-# def new_transaction(request):
-#     values = json.loads(request.body.decode('utf-8'))
-#     required = ['sender', 'recipient', 'amount']
-#     if not all(k in values for k in required):
-#         return 'Missing values'
-#     index = blockchain.new_transaction(values['sender'], values['recipient'], values['amount'])
-#     print(index)
-#     response = {'message': 'Transaction will be added to Block %s'%index}
-#     return HttpResponse(json.dumps(response))
-#
-# def full_chain(request):
-#     response = {
-#         'chain': blockchain.chain,
-#         'length': len(blockchain.chain),
-#     }
-#     return HttpResponse(json.dumps(response))
-
-
-# def watch_file():
-#     while(True):
-#         file_path = "README.md"
-#         with open(file_path,'r') as f:
-#             lines = f.readlines()
-#             if len(lines)>0:
-#                 command = lines[0]
-#                 print(command)
-#
-#         with open(file_path,'w') as f:
-#             f.close()
-#
-#         sleep(1)
 
 def init(request):
     try:
@@ -131,12 +64,15 @@ def add(request):
     with open(os.path.join(cur_path, 'CMD/main'), 'w') as f:
         f.write('addNode\n')
 
-    sleep(2)
+    sleep(3)
+    print('in add')
 
     # star network
     p2p_json = ['[\n', '{"source":"s1","target":"s1","region":"switch1"},\n']
     with open(os.path.join(cur_path, 'Logs/main'), 'r') as f:
         lines = f.readlines()
+        print('Logs/main')
+        print(lines)
         for i, line in enumerate(lines):
             line_split = line.strip().split()
 
@@ -147,6 +83,8 @@ def add(request):
             p2p_json.append(p2p_line)
 
     p2p_json.append(']\n')
+
+    print(''.join(p2p_json))
 
     with open(os.path.join(cur_path, 'bitcoin/demo/static/data/p2p.json'), 'w') as f:
         f.writelines(p2p_json)
@@ -197,11 +135,14 @@ def delete(request):
         f.write('delNode '+host_name+'\n')
 
     sleep(3)
+    print('in delete')
 
     # star network
     p2p_json = ['[\n', '{"source":"s1","target":"s1","region":"switch1"},\n']
     with open(os.path.join(cur_path, 'Logs/main'), 'r') as f:
+        print('Logs/main')
         lines = f.readlines()
+        print(lines)
         for i, line in enumerate(lines):
             line_split = line.strip().split()
 
@@ -213,7 +154,7 @@ def delete(request):
 
     p2p_json.append(']\n')
 
-    print(p2p_json)
+    print(''.join(p2p_json))
 
     with open(os.path.join(cur_path, 'bitcoin/demo/static/data/p2p.json'), 'w') as f:
         f.writelines(p2p_json)

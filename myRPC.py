@@ -46,7 +46,7 @@ class myRPCProtocol(asyncio.DatagramProtocol):
         self.requests[messageID] = reply;
 
         loop = asyncio.get_event_loop();
-        loop.call_later(self.timeout, self.handletimeout, messageID, args, kwargs);
+        loop.call_later(self.timeout, self.handletimeout, messageID, peer, args, kwargs);
 
         obj = ('request', messageID, funcName, args, kwargs);
         message = pickle.dumps(obj, protocol=0);
@@ -109,7 +109,7 @@ class myRPCProtocol(asyncio.DatagramProtocol):
 
 
     #处理超时
-    def handletimeout(self, messageID, args, kwargs):
+    def handletimeout(self, messageID, peer, args, kwargs):
         # print("timeout :", messageID);
         if messageID in self.requests:
             reply = self.requests.pop(messageID);

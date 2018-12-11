@@ -29,9 +29,7 @@ class Node(myRPCProtocol):
 
         self.blockchain = None
         self.local_addr = None
-
-
-
+        self.wallet = 0
 
 
     def setLocalAddr(self,local_addr):
@@ -156,23 +154,6 @@ class Node(myRPCProtocol):
         except socket.timeout:
             print("Could not get money from node0", peer)
             return
-
-
-        # test boardcast!
-        # if(len(self.routingTable.getNeighborhoods())==3):
-        #     yield from self.postBoardcast(random_id(), 'testBoradCast',self.ID,"Testargs");
-
-        # test create transaction and mine
-        # peers = self.routingTable.getNeighborhoods()
-        # print('peers', peers)
-        # if len(peers) > 0 and len(self.blockchain.chain) == 1:
-        #     for peerID, peer in peers.items():
-        #         tx_id = self.create_transaction(self.blockchain, self.ID, peerID, len(self.blockchain.chain))
-        #         print('current transactin = ', self.blockchain.current_transactions)
-        #         response = self.mine(self.blockchain, self.ID)
-        #         print('after mining, blockchain = ', self.blockchain.chain)
-        #         self.logger.info('after mining, blockchain = ')
-        #         self.logger.info(self.blockchain.chain)
 
 
     @asyncio.coroutine
@@ -338,6 +319,15 @@ class Node(myRPCProtocol):
         TXInfo = os.path.join(log_path, "TXInfo")
         save_data(self.blockchain.current_transactions,TXInfo)
 
+    def update_wallet(self):
+        # update wallet value
+        txs = self.blockchain.get_all_tx()
+        for tx in txs:
+            if str(tx['sender']) == str(self.ID):
+                self.wallet -= tx['amount']
+            if str(tx['recipient']) == str(self.ID):
+                self.wallet += tx['amount']
+
     def recordBlockInfo(self):
         log_path = os.path.join(cur_path, 'Logs', str(self.local_addr[0]))
 
@@ -346,6 +336,8 @@ class Node(myRPCProtocol):
 
         BlockInfo = os.path.join(log_path, "BlockInfo")
         save_data(self.blockchain.chain,BlockInfo)
+
+        self.update_wallet()
 
 
     def initFileCMD(self):
@@ -415,10 +407,12 @@ class Node(myRPCProtocol):
             super(Node,self).handleBroadcast(peer, messageID, funcName, *args);
 
     # 处理超时
-    def handletimeout(self, messageID, args, kwargs):
-        peerID = args[0];
+    def handletimeout(self, messageID, peer, args, kwargs):
+        peerID = self.routingTable.getPeerIDByIP(peer[0]);
+        print('remove peerID ',peerID)
+
         self.routingTable.remove(peerID);
-        super(Node, self).handletimeout( messageID, args, kwargs);
+        super(Node, self).handletimeout( messageID,peer, args, kwargs);
 
 
 
