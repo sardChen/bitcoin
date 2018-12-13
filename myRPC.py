@@ -118,8 +118,8 @@ class myRPCProtocol(asyncio.DatagramProtocol):
 
     #实现父类方法-发现错误后调用
     def error_received(self, exc):
-        # print("error received: ", exc);
-        pass
+        print("error received: ", exc);
+        # pass
 
 
 

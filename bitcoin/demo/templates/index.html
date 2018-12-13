@@ -69,9 +69,12 @@
 						<input class="form-control"  style="width:45%; display:inline" placeholder="交易额" id="amount">
 						<button class="btn btn-danger"  onclick="createTX('{{ host_name }}')"> 发送交易 </button >
 					</div>
-					
-					
-						
+                    <div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">钱包余额</label>
+                                <p class="help-block" style="width:50%; float:right">{{ wallet_info }}</p>
+                        </div>
+					</div>
             </div>
 			<div class="panel-heading">
                 {{ host_name }}节点未确认交易列表

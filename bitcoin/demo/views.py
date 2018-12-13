@@ -109,6 +109,7 @@ def add(request):
     base_info_path = os.path.join(folder_path, 'baseInfo')
     block_info_path = os.path.join(folder_path, 'BlockInfo')
     TX_info_path = os.path.join(folder_path, 'TXInfo')
+    wallet_path = os.path.join(folder_path, 'wallet')
 
     with open(base_info_path, 'r') as f:
         lines = f.readlines()
@@ -117,6 +118,7 @@ def add(request):
 
     block_info = get_data(block_info_path)
     tx_info = get_data(TX_info_path)
+    wallet_info = get_data(wallet_path)
 
     print(host_id, host_addr)
     print(block_info)
@@ -125,7 +127,9 @@ def add(request):
     return render(request, 'index.html', {'host_name': host_name,
                                           'base_info': [host_id, host_addr],
                                           'block_info': block_info,
-                                          'tx_info': tx_info})
+                                          'tx_info': tx_info,
+                                          'wallet_info': wallet_info,
+                                          })
 
 
 def delete(request):
@@ -180,6 +184,7 @@ def delete(request):
     base_info_path = os.path.join(folder_path, 'baseInfo')
     block_info_path = os.path.join(folder_path, 'BlockInfo')
     TX_info_path = os.path.join(folder_path, 'TXInfo')
+    wallet_path = os.path.join(folder_path, 'wallet')
 
     with open(base_info_path, 'r') as f:
         lines = f.readlines()
@@ -188,6 +193,7 @@ def delete(request):
 
     block_info = get_data(block_info_path)
     tx_info = get_data(TX_info_path)
+    wallet_info = get_data(wallet_path)
 
     print(host_id, host_addr)
     print(block_info)
@@ -196,7 +202,9 @@ def delete(request):
     return render(request, 'index.html', {'host_name': host_name,
                                           'base_info': [host_id, host_addr],
                                           'block_info': block_info,
-                                          'tx_info': tx_info})
+                                          'tx_info': tx_info,
+                                          'wallet_info': wallet_info,
+                                          })
 
 
 def get_node_info(request):
@@ -228,6 +236,7 @@ def get_node_info(request):
     base_info_path = os.path.join(folder_path, 'baseInfo')
     block_info_path = os.path.join(folder_path, 'BlockInfo')
     TX_info_path = os.path.join(folder_path, 'TXInfo')
+    wallet_path = os.path.join(folder_path, 'wallet')
 
     print(base_info_path)
 
@@ -238,6 +247,7 @@ def get_node_info(request):
 
     block_info = get_data(block_info_path)
     tx_info = get_data(TX_info_path)
+    wallet_info = get_data(wallet_path)
 
     print(host_id, host_addr)
     print(block_info)
@@ -246,7 +256,9 @@ def get_node_info(request):
     return render(request, 'index.html', {'host_name': host_name,
                                           'base_info': [host_id, host_addr],
                                           'block_info': block_info,
-                                          'tx_info': tx_info})
+                                          'tx_info': tx_info,
+                                          'wallet_info': wallet_info,
+                                          })
 
 def mine(request):
     host_name = request.session.get('hostname')
@@ -270,6 +282,7 @@ def mine(request):
     base_info_path = os.path.join(folder_path, 'baseInfo')
     block_info_path = os.path.join(folder_path, 'BlockInfo')
     TX_info_path = os.path.join(folder_path, 'TXInfo')
+    wallet_path = os.path.join(folder_path, 'wallet')
 
     sleep(3)
 
@@ -280,6 +293,7 @@ def mine(request):
 
     block_info = get_data(block_info_path)
     tx_info = get_data(TX_info_path)
+    wallet_info = get_data(wallet_path)
 
     print(host_id, host_addr)
     print(block_info)
@@ -288,7 +302,9 @@ def mine(request):
     return render(request, 'index.html', {'host_name': host_name,
                                           'base_info': [host_id, host_addr],
                                           'block_info': block_info,
-                                          'tx_info': tx_info})
+                                          'tx_info': tx_info,
+                                          'wallet_info': wallet_info,
+                                          })
 
 
 def send_tx(request):
@@ -320,6 +336,7 @@ def send_tx(request):
     base_info_path = os.path.join(folder_path, 'baseInfo')
     block_info_path = os.path.join(folder_path, 'BlockInfo')
     TX_info_path = os.path.join(folder_path, 'TXInfo')
+    wallet_path = os.path.join(folder_path, 'wallet')
 
     sleep(3)
 
@@ -330,6 +347,7 @@ def send_tx(request):
 
     block_info = get_data(block_info_path)
     tx_info = get_data(TX_info_path)
+    wallet_info = get_data(wallet_path)
 
     print(host_id, host_addr)
     print(block_info)
@@ -338,7 +356,9 @@ def send_tx(request):
     return render(request, 'index.html', {'host_name': host_name,
                                           'base_info': [host_id, host_addr],
                                           'block_info': block_info,
-                                          'tx_info': tx_info})
+                                          'tx_info': tx_info,
+                                          'wallet_info': wallet_info,
+                                          })
 
 def index(request):
     host_name = 'h1s1'
@@ -360,6 +380,7 @@ def index(request):
     base_info_path = os.path.join(folder_path, 'baseInfo')
     block_info_path = os.path.join(folder_path, 'BlockInfo')
     TX_info_path = os.path.join(folder_path, 'TXInfo')
+    wallet_path = os.path.join(folder_path, 'wallet')
 
     with open(base_info_path, 'r') as f:
         lines = f.readlines()
@@ -368,6 +389,7 @@ def index(request):
 
     block_info = get_data(block_info_path)
     tx_info = get_data(TX_info_path)
+    wallet_info = get_data(wallet_path)
 
     print(host_id, host_addr)
     print(block_info)
@@ -376,4 +398,6 @@ def index(request):
     return render(request, 'index.html', {'host_name': host_name,
                                           'base_info': [host_id, host_addr],
                                           'block_info': block_info,
-                                          'tx_info': tx_info})
+                                          'tx_info': tx_info,
+                                          'wallet_info': wallet_info,
+                                          })

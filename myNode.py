@@ -163,16 +163,23 @@ class Node(myRPCProtocol):
         if len(peers) == 0:
             # genesis block
             self.blockchain = BlockChain(self.ID)
+            # self.blockchain.set_logger(self.logger)
+            self.blockchain.create_genesis_block()
         else:
             for peerID, peer in peers.items():
                 try:
                     receive_blockchain = yield from self.download_peer_blockchain(peers[peerID], self.ID)
+                    self.logger.info('receive blockchain.chain = ')
+                    self.logger.info(receive_blockchain.chain)
                     if self.blockchain == None:
                         self.blockchain = receive_blockchain
                         self.blockchain.set_node_id(self.ID)
+                        # self.blockchain.set_logger(self.logger)
                     elif len(receive_blockchain.chain) > len(self.blockchain.chain):
                         self.blockchain = receive_blockchain
                         self.blockchain.set_node_id(self.ID)
+                        # self.blockchain.set_logger(self.logger)
+
                 except socket.timeout:
                     print("Could not download_peer_blockchain", peers[peerID])
 
@@ -193,7 +200,7 @@ class Node(myRPCProtocol):
         new_chain = None
 
         # We're only looking for chains longer than ours
-        max_length = len(self.blockchain.chain)
+        self_length = len(self.blockchain.chain)
 
         # Grab and verify the chains from all the nodes in our network
         for peerID, peer in peers.items():
@@ -203,8 +210,10 @@ class Node(myRPCProtocol):
                 length = len(chain)
 
                 # Check if the length is longer and the chain is valid
-                if length > max_length and self.blockchain.check_chain(chain):
-                    max_length = length
+                # if the blockchain length is 2 block head current blockchain
+                # TODO test receive blockchain length
+                if length > self_length and self.blockchain.check_chain(chain):
+                    self_length = length
                     new_chain = chain
             except socket.timeout:
                 print("Could not download_peer_blockchain in resolve_conflicts", peers[peerID])
@@ -213,6 +222,7 @@ class Node(myRPCProtocol):
         if new_chain:
             self.blockchain.chain = new_chain
             self.blockchain.set_node_id(self.ID)
+            # self.blockchain.set_logger(self.logger)
             self.logger.info('blockchain.node_id = ' + str(self.blockchain.node_id))
             self.logger.info(self.blockchain.chain)
             self.recordBlockInfo()
@@ -273,8 +283,23 @@ class Node(myRPCProtocol):
 
     def create_transaction(self, blockchain, sender, recipient, amount):
         # Create a new Transaction
-        tx_index = blockchain.new_transaction(sender, recipient, amount)
-        return tx_index
+        # tx_index = blockchain.new_transaction(sender, recipient, amount)
+        # return tx_index
+
+        if str(sender) != str(self.ID):
+            tx_index = blockchain.new_transaction(sender, recipient, amount)
+            return tx_index
+        elif str(sender) == str(self.ID) and self.wallet - amount >= 0:
+            tx_index = blockchain.new_transaction(sender, recipient, amount)
+            return tx_index
+        else:
+            return -1
+
+        # if str(sender) == str(self.ID) and self.wallet - amount >= 0:
+        #     tx_index = blockchain.new_transaction(sender, recipient, amount)
+        #     return tx_index
+        # else:
+        #     return -1
 
     def init_logger(self):
         # 第一步，创建一个logger
@@ -322,12 +347,19 @@ class Node(myRPCProtocol):
     def update_wallet(self):
         # update wallet value
         txs = self.blockchain.get_all_tx()
+
+        self.logger.info('txs = ')
+        self.logger.info(txs)
+
+        self.wallet = 0
+
         for tx in txs:
             if str(tx['sender']) == str(self.ID):
                 self.wallet -= tx['amount']
             if str(tx['recipient']) == str(self.ID):
                 self.wallet += tx['amount']
 
+    # serialize block and wallet
     def recordBlockInfo(self):
         log_path = os.path.join(cur_path, 'Logs', str(self.local_addr[0]))
 
@@ -338,6 +370,10 @@ class Node(myRPCProtocol):
         save_data(self.blockchain.chain,BlockInfo)
 
         self.update_wallet()
+
+        wallet_info = os.path.join(log_path, "wallet")
+        save_data(self.wallet,wallet_info)
+
 
 
     def initFileCMD(self):
@@ -532,9 +568,16 @@ class Node(myRPCProtocol):
             peerID = self.routingTable.getPeerIDByIP(IP)
             # check for enough money
             tx_id = self.create_transaction(self.blockchain, self.ID, str(peerID), amount)
-            self.logger.info('current transactinon = ')
-            self.logger.info(self.blockchain.current_transactions)
-            self.recordTXInfo()
-            await self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
+            if tx_id != -1:
+                self.logger.info('current transactinon = ')
+                self.logger.info(self.blockchain.current_transactions)
+                self.recordTXInfo()
+                await self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
+            else:
+                self.logger.info('could not create transaction, wallet < amount')
+                log_str=str(self.wallet)+' < '+str(amount)
+                self.logger.info(log_str)
+
+
 
 

@@ -13,13 +13,18 @@ class BlockChain(object):
         self.current_transactions = []
         self.nodes = set()
         self.set_node_id(ID)
-
-        # Create the genesis block
-        self.new_block(previous_hash=1, proof=100)
         self.stop = False;
+        # self.logger = None
 
     def set_node_id(self, node_id):
         self.node_id = node_id
+
+    # def set_logger(self, logger):
+    #     self.logger = logger
+
+    def create_genesis_block(self):
+        # Create the genesis block
+        self.new_block(previous_hash=1, proof=100)
 
     def register_node(self, address):
         """
@@ -49,10 +54,17 @@ class BlockChain(object):
                 'amount': 999,
             })
 
+        valid_transactions, invalid_transactions = self.check_transactions()
+
+        # self.logger.info('valid_transactions')
+        # self.logger.info(valid_transactions)
+        # self.logger.info('invalid_transactions')
+        # self.logger.info(invalid_transactions)
+
         block = {
             'index': len(self.chain) + 1,
             'timestamp': time(),
-            'transactions': self.current_transactions,
+            'transactions': valid_transactions,
             'proof': proof,
             'previous_hash': previous_hash or self.hash(self.chain[-1]),
             'minerID': self.node_id,
@@ -61,7 +73,7 @@ class BlockChain(object):
 
         # Reset the current list of transactions
 
-        self.current_transactions = []
+        self.current_transactions = [tx for tx in invalid_transactions]
 
         self.chain.append(block)
         return block
@@ -153,6 +165,7 @@ class BlockChain(object):
                     :param chain: <list> A blockchain
                     :return: <bool> True if valid, False if not
                     """
+        # self.logger.info('in check_chain')
 
         last_block = chain[0]
         current_index = 1
@@ -160,11 +173,11 @@ class BlockChain(object):
         tx_id_set = set()
 
         for tx in last_block['transactions']:
-            UTXO[tx['sender']] -= int(tx['amount'])
-            UTXO[tx['recipient']] += int(tx['amount'])
+            UTXO[str(tx['sender'])] -= int(tx['amount'])
+            UTXO[str(tx['recipient'])] += int(tx['amount'])
 
-            if tx['id'] not in tx_id_set:
-                tx_id_set.add(tx['id'])
+            if str(tx['id']) not in tx_id_set:
+                tx_id_set.add(str(tx['id']))
             else:
                 return False
 
@@ -175,6 +188,9 @@ class BlockChain(object):
             # print("\n-----------\n")
             # Check that the hash of the block is correct
             # check fork
+
+            # self.logger.info('previous_hash = '+str(block['previous_hash']))
+            # self.logger.info('current_hash = '+self.hash(last_block))
             if block['previous_hash'] != self.hash(last_block):
                 return False
 
@@ -183,11 +199,11 @@ class BlockChain(object):
                 return False
 
             for tx in block['transactions']:
-                UTXO[tx['sender']] -= int(tx['amount'])
-                UTXO[tx['recipient']] += int(tx['amount'])
+                UTXO[str(tx['sender'])] -= int(tx['amount'])
+                UTXO[str(tx['recipient'])] += int(tx['amount'])
 
-                if tx['id'] not in tx_id_set:
-                    tx_id_set.add(tx['id'])
+                if str(tx['id']) not in tx_id_set:
+                    tx_id_set.add(str(tx['id']))
                 else:
                     return False
 
@@ -195,6 +211,8 @@ class BlockChain(object):
             current_index += 1
 
         for id in UTXO:
+            # self.logger.info('check UTXO')
+            # self.logger.info(str(id) + ' , ' + str(UTXO[id]))
             if id == '0':
                 continue
             elif UTXO[id] < 0:
@@ -227,5 +245,43 @@ class BlockChain(object):
         for block in self.chain:
             for tx in block['transactions']:
                 txs.append(tx)
+
         return txs
+
+    def check_transactions(self):
+        # self.logger.info('in check_transactions')
+        valid_transactions = []
+        invalid_transactions = []
+
+        current_index = 0
+        UTXO = defaultdict(int)
+
+        while current_index < len(self.chain):
+            block = self.chain[current_index]
+
+            for tx in block['transactions']:
+                UTXO[str(tx['sender'])] -= int(tx['amount'])
+                UTXO[str(tx['recipient'])] += int(tx['amount'])
+
+            current_index += 1
+
+        for id in UTXO:
+            print(id,UTXO[id])
+
+        for tx in self.current_transactions:
+            print('sender = ',str(tx['sender']))
+            print('amount = ',str(tx['amount']))
+            if UTXO[str(tx['sender'])] - int(tx['amount']) < 0 and str(tx['sender']) != "0":
+                invalid_transactions.append(tx)
+            else:
+                UTXO[str(tx['sender'])] -= int(tx['amount'])
+                UTXO[str(tx['recipient'])] += int(tx['amount'])
+                valid_transactions.append(tx)
+
+        print('valid transactions = ')
+        print(valid_transactions)
+        print('invalid transactions = ')
+        print(invalid_transactions)
+
+        return valid_transactions, invalid_transactions
 
