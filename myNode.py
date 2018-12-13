@@ -286,20 +286,15 @@ class Node(myRPCProtocol):
         # tx_index = blockchain.new_transaction(sender, recipient, amount)
         # return tx_index
 
-        if str(sender) != str(self.ID):
+        if sender != self.ID:
             tx_index = blockchain.new_transaction(sender, recipient, amount)
             return tx_index
-        elif str(sender) == str(self.ID) and self.wallet - amount >= 0:
+        elif sender == self.ID and self.wallet - amount >= 0:
             tx_index = blockchain.new_transaction(sender, recipient, amount)
             return tx_index
         else:
             return -1
 
-        # if str(sender) == str(self.ID) and self.wallet - amount >= 0:
-        #     tx_index = blockchain.new_transaction(sender, recipient, amount)
-        #     return tx_index
-        # else:
-        #     return -1
 
     def init_logger(self):
         # 第一步，创建一个logger
@@ -354,9 +349,9 @@ class Node(myRPCProtocol):
         self.wallet = 0
 
         for tx in txs:
-            if str(tx['sender']) == str(self.ID):
+            if tx['sender'] ==self.ID:
                 self.wallet -= tx['amount']
-            if str(tx['recipient']) == str(self.ID):
+            if tx['recipient'] == self.ID:
                 self.wallet += tx['amount']
 
     # serialize block and wallet
@@ -567,7 +562,7 @@ class Node(myRPCProtocol):
             amount = int(args[1])
             peerID = self.routingTable.getPeerIDByIP(IP)
             # check for enough money
-            tx_id = self.create_transaction(self.blockchain, self.ID, str(peerID), amount)
+            tx_id = self.create_transaction(self.blockchain, self.ID, peerID, amount)
             if tx_id != -1:
                 self.logger.info('current transactinon = ')
                 self.logger.info(self.blockchain.current_transactions)

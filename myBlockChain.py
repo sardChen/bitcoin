@@ -45,11 +45,11 @@ class BlockChain(object):
         """
 
         if len(self.chain) == 0:
-            id = str(random_id())
+            id = random_id()
 
             self.current_transactions.append({
                 'id': id,
-                'sender': "0",
+                'sender': 0,
                 'recipient': self.node_id,
                 'amount': 999,
             })
@@ -81,13 +81,13 @@ class BlockChain(object):
     def new_transaction(self, sender, recipient, amount):
         """
         生成新交易信息，信息将加入到下一个待挖的区块中
-        :param sender: <str> Address of the Sender
-        :param recipient: <str> Address of the Recipient
+        :param sender: <int> Address of the Sender
+        :param recipient: <int> Address of the Recipient
         :param amount: <int> Amount
         :return: <int> The index of the Block that will hold this transaction
         """
 
-        id = str(random_id())
+        id = random_id()
 
         self.current_transactions.append({
             'id' : id,
@@ -189,8 +189,7 @@ class BlockChain(object):
             # Check that the hash of the block is correct
             # check fork
 
-            # self.logger.info('previous_hash = '+str(block['previous_hash']))
-            # self.logger.info('current_hash = '+self.hash(last_block))
+
             if block['previous_hash'] != self.hash(last_block):
                 return False
 
@@ -211,8 +210,6 @@ class BlockChain(object):
             current_index += 1
 
         for id in UTXO:
-            # self.logger.info('check UTXO')
-            # self.logger.info(str(id) + ' , ' + str(UTXO[id]))
             if id == '0':
                 continue
             elif UTXO[id] < 0:
