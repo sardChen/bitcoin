@@ -88,7 +88,10 @@ class Node(myRPCProtocol):
         if self.blockchain.check_chain(tmp_chain):
             self.blockchain.chain.append(newBlock);
         else:
-            self.resolve_conflicts()
+            print("run resolve_conflicts()!!!")
+            loop = asyncio.get_event_loop();
+            loop.run_until_complete(self.resolve_conflicts())
+            # self.resolve_conflicts()
 
         IDlist = self.blockchain.getAllTX()
         self.blockchain.removeSomeTX(IDlist)
