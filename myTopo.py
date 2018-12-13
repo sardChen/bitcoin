@@ -3,17 +3,23 @@ from mininet.util import irange
 
 
 
+bw=1000
+delay='0ms'
+loss=0
+
 class starTopo(Topo):
+
     #1个switch上连接n个hosts
     def build( self, n=2, **_opts):
         self.n = n
+
 
         genHostName = lambda i, j: 'h%ss%d' % ( j, i )
 
         switch = self.addSwitch( 's%s' % 1 )
         for j in irange( 1, n ):
             host = self.addHost( genHostName( 1, j ) )
-            self.addLink( host, switch )
+            self.addLink( host, switch, bw=bw, delay=delay,loss=loss)
 
 
 

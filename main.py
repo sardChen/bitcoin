@@ -32,6 +32,8 @@ from mininet.nodelib import LinuxBridge
 from mininet.util import *
 import shutil
 
+from mininet.link import TCLink
+
 IP = "10.0.0.0/8"
 PORT = 9000
 
@@ -81,9 +83,11 @@ def setupP2PNet(arg1=1, arg2=3, netType="net"):
             print("netType error!");
             sys.exit(0);
 
-        P2PNet = Mininet(topo=topo,ipBase=IP);
+        P2PNet = Mininet(topo=topo,link=TCLink,ipBase=IP);
 
     P2PNet.start();
+    #限制带宽
+    P2PNet.iperf()
 
     for i, s in enumerate(P2PNet.switches):
         print(i,s.IP)
