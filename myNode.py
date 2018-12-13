@@ -408,11 +408,14 @@ class Node(myRPCProtocol):
 
     # 处理超时
     def handletimeout(self, messageID, peer, args, kwargs):
-        peerID = self.routingTable.getPeerIDByIP(peer[0]);
-        print('remove peerID ',peerID)
+        if messageID in self.requests:
+            reply = self.requests.pop(messageID);
+            reply.set_exception(socket.timeout);
+            peerID = self.routingTable.getPeerIDByIP(peer[0]);
+            print('remove peerID ',peerID)
 
-        self.routingTable.remove(peerID);
-        super(Node, self).handletimeout( messageID,peer, args, kwargs);
+            self.routingTable.remove(peerID);
+            # super(Node, self).handletimeout( messageID,peer, args, kwargs);
 
 
 

@@ -2,6 +2,7 @@
 {"source":"s1","target":"s1","region":"switch1"},
 {"source":"h1s1","target":"s1","region":"(10.0.0.1:9000)"},
 {"source":"h2s1","target":"s1","region":"(10.0.0.2:9000)"},
-{"source":"h3s1","target":"s1","region":"(10.0.0.3:9000)"},
-{"source":"h4s1","target":"s1","region":"(10.0.0.4:9000)"}
+{"source":"h4s1","target":"s1","region":"(10.0.0.4:9000)"},
+{"source":"h3s3","target":"s1","region":"(10.0.0.5:9000)"},
+{"source":"h4s4","target":"s1","region":"(10.0.0.6:9000)"}
 ]
