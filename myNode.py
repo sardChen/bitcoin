@@ -215,7 +215,8 @@ class Node(myRPCProtocol):
                 # Check if the length is longer and the chain is valid
                 # if the blockchain length is 2 block head current blockchain
                 # TODO test receive blockchain length
-                if length > self_length and self.blockchain.check_chain(chain):
+                print(length," !!!!!!  " ,self_length)
+                if length - 1 > self_length and self.blockchain.check_chain(chain):
                     self_length = length
                     new_chain = chain
             except socket.timeout:
@@ -225,10 +226,13 @@ class Node(myRPCProtocol):
         if new_chain:
             self.blockchain.chain = new_chain
             self.blockchain.set_node_id(self.ID)
-            # self.blockchain.set_logger(self.logger)
             self.logger.info('blockchain.node_id = ' + str(self.blockchain.node_id))
             self.logger.info(self.blockchain.chain)
             self.recordBlockInfo()
+
+            IDlist = self.blockchain.getAllTX()
+            self.blockchain.removeSomeTX(IDlist)
+            self.recordTXInfo()
             return True
 
         return False
@@ -564,14 +568,17 @@ class Node(myRPCProtocol):
             IP = args[0];
             amount = int(args[1])
             peerID = self.routingTable.getPeerIDByIP(IP)
+            if peerID != None:
             # check for enough money
-            tx_id = self.create_transaction(self.blockchain, self.ID, peerID, amount)
-            if tx_id != -1:
-                self.logger.info('current transactinon = ')
-                self.logger.info(self.blockchain.current_transactions)
-                self.recordTXInfo()
-                await self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
+                tx_id = self.create_transaction(self.blockchain, self.ID, peerID, amount)
+                if tx_id != -1:
+                    self.logger.info('current transactinon = ')
+                    self.logger.info(self.blockchain.current_transactions)
+                    self.recordTXInfo()
+                    await self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
+                else:
+                    self.logger.info('could not create transaction, wallet < amount')
+                    log_str=str(self.wallet)+' < '+str(amount)
+                    self.logger.info(log_str)
             else:
-                self.logger.info('could not create transaction, wallet < amount')
-                log_str=str(self.wallet)+' < '+str(amount)
-                self.logger.info(log_str)
+                print("no such reciever! peerIP: ", IP)

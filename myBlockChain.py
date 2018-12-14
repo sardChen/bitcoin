@@ -189,8 +189,8 @@ class BlockChain(object):
             # Check that the hash of the block is correct
             # check fork
 
-
             if block['previous_hash'] != self.hash(last_block):
+                print("return false !!!!!")
                 return False
 
             # Check that the Proof of Work is correct
@@ -262,12 +262,12 @@ class BlockChain(object):
 
             current_index += 1
 
-        for id in UTXO:
-            print(id,UTXO[id])
+        # for id in UTXO:
+        #     print(id,UTXO[id])
 
         for tx in self.current_transactions:
-            print('sender = ',str(tx['sender']))
-            print('amount = ',str(tx['amount']))
+            # print('sender = ',str(tx['sender']))
+            # print('amount = ',str(tx['amount']))
             if UTXO[str(tx['sender'])] - int(tx['amount']) < 0 and str(tx['sender']) != "0":
                 invalid_transactions.append(tx)
             else:
@@ -275,9 +275,7 @@ class BlockChain(object):
                 UTXO[str(tx['recipient'])] += int(tx['amount'])
                 valid_transactions.append(tx)
 
-        print('valid transactions = ')
-        print(valid_transactions)
-        print('invalid transactions = ')
-        print(invalid_transactions)
+        # valid_transactions=self.current_transactions
+        # invalid_transactions=[]
 
         return valid_transactions, invalid_transactions
