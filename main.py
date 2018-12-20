@@ -53,6 +53,11 @@ TOPOS = { 'minimal': MinimalTopo,
 
 
 P2PNet=None
+MODE = "pow"
+
+def setMode(mode):
+    global MODE;
+    MODE = mode;
 
 def setupP2PNet(arg1=1, arg2=3, netType="net"):
 
@@ -96,7 +101,7 @@ def setupP2PNet(arg1=1, arg2=3, netType="net"):
         print(i,host.IP)
         if(i>=0):
             print( host.cmd("ping -c1 10.0.0.1"))
-        cmd= xtermCMD(host.IP(), PORT, P2PNet.hosts[0].IP(), PORT)
+        cmd= xtermCMD(host.IP(), PORT, P2PNet.hosts[0].IP(), PORT, MODE)
         print(cmd)
         host.cmd(cmd % (i))
         time.sleep(1)
@@ -164,7 +169,7 @@ def fileCommand():
 
                     print(newHost.cmd("ping -c1 10.0.0.1"))
 
-                    cmd = xtermCMD(newHost.IP(), PORT, P2PNet.hosts[0].IP(), PORT)
+                    cmd = xtermCMD(newHost.IP(), PORT, P2PNet.hosts[0].IP(), PORT, MODE)
 
                     print(cmd)
 
@@ -211,7 +216,7 @@ class myCommand(Cmd):
 
         print(newHost.cmd("ping -c1 10.0.0.1"))
 
-        cmd = xtermCMD(newHost.IP(),PORT,P2PNet.hosts[0].IP(),PORT)
+        cmd = xtermCMD(newHost.IP(),PORT,P2PNet.hosts[0].IP(),PORT, MODE)
 
         print(cmd)
 

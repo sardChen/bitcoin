@@ -31,6 +31,8 @@ class Node(myRPCProtocol):
         self.local_addr = None
         self.wallet = 0
 
+        self.pos = 0
+
 
     def setLocalAddr(self,local_addr):
         self.local_addr = local_addr;
@@ -81,6 +83,7 @@ class Node(myRPCProtocol):
         print("Recived new Block!!!!", peer, peerId, newBlock)
         logging.info("Recived new Block")
         self.blockchain.stop = True;
+        self.pos = 0
 
         #TODO 判断新块是否有冲突, 有冲突从其他人拉去区块,否则直接更新
         tmp_chain = [x for x in self.blockchain.chain]
@@ -107,6 +110,11 @@ class Node(myRPCProtocol):
     def download_peer_blockchain(self, peer, peerID):
         # print(self.ID, "downloading blockchain from", peer, peerID)
         return self.blockchain
+
+    @convert2RPC
+    def getpos(self, peer, peerID):
+        # print(self.ID, "downloading blockchain from", peer, peerID)
+        return self.pos
 
 
 
@@ -157,6 +165,22 @@ class Node(myRPCProtocol):
         except socket.timeout:
             print("Could not get money from node0", peer)
             return
+
+    @asyncio.coroutine
+    def getAllPOS(self):
+        peers = self.routingTable.getNeighborhoods()
+
+        all_pos = []
+
+        for peerID, peer in peers.items():
+            try:
+                pos = yield from self.getpos(peers[peerID], self.ID)
+                if pos != None:
+                    all_pos.append(pos)
+            except socket.timeout:
+                print("Could not download_peer_blockchain", peers[peerID])
+
+        return all_pos
 
 
     @asyncio.coroutine
@@ -269,7 +293,7 @@ class Node(myRPCProtocol):
         return response
 
     @asyncio.coroutine
-    def startMine(self):
+    def startPOW(self):
         while True:
             response = yield from self.mine()
             if response!=None:
@@ -286,6 +310,63 @@ class Node(myRPCProtocol):
             #每当挖完矿或者别人挖到矿时,等待一段时间,等所有消息处理完毕
             yield from asyncio.sleep(30)
             self.blockchain.stop=False;
+
+
+
+    @asyncio.coroutine
+    def startPOS(self):
+        print("POS start !!!")
+        while True:
+            #没两分钟进行一次pos协议
+            period = 120
+            yield from asyncio.sleep(period)
+
+            # TODO 暂时简化
+            self.pos = random.randint(0,self.wallet)
+
+            # 等待其他人计算pos值
+            yield from asyncio.sleep(30)
+
+            all_pos = yield from self.getAllPOS()
+            leader = True
+            for pos in all_pos:
+                print(pos,"  ",self.pos)
+                if pos>=self.pos:
+                    leader=False
+
+            if leader == True:
+                print(self.ID, ' has mined new block ')
+
+                last_block = self.blockchain.last_block
+                last_proof = last_block['proof']
+                # use pos (very quick)
+                proof = self.blockchain.pos(last_proof)
+
+                # 给pos的节点提供奖励.
+                # 发送者为 "0" 表明是新挖出的币
+                self.blockchain.new_transaction(
+                    sender="0",
+                    recipient=self.ID,
+                    amount=random.randint(1, 10),
+                )
+
+                # Forge the new Block by adding it to the chain
+                self.blockchain.new_block(proof)
+
+                self.logger.info('after mining, blockchain = ')
+                self.logger.info(self.blockchain.chain)
+                # broadcast new Blcokchain
+                self.recordBlockInfo()
+                self.recordTXInfo()
+                yield from self.postBoardcast(random_id(), 'recordNewBlock', self.ID, self.blockchain.chain[-1]);
+            else:
+                print('This new block has been mined by others')
+                self.logger.info('This blockchain has been mined by others')
+            #每当挖完矿或者别人挖到矿时,等待一段时间,等所有消息处理完毕
+            yield from asyncio.sleep(30)
+
+
+
 
 
     def create_transaction(self, blockchain, sender, recipient, amount):

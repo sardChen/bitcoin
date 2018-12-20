@@ -5,7 +5,7 @@ import signal
 
 from myNode import Node
 
-def setupNode(local_addr, peer_addr):
+def setupNode(local_addr, peer_addr, mode):
 
     loop = asyncio.get_event_loop()
 
@@ -22,7 +22,12 @@ def setupNode(local_addr, peer_addr):
 
     loop.run_until_complete(node.join(peer_addr))
 
-    loop.create_task(node.startMine())
+    print(mode+  "!!!!")
+
+    if mode == "pow":
+        loop.create_task(node.startPOW())
+    elif mode == "pos":
+        loop.create_task(node.startPOS())
 
     loop.create_task(node.nodeCommand())
 
@@ -35,5 +40,6 @@ def setupNode(local_addr, peer_addr):
 if __name__ == '__main__':
     setupNode(
         local_addr=(sys.argv[1], int(sys.argv[2])),
-        peer_addr=(sys.argv[3], int(sys.argv[4]))
+        peer_addr=(sys.argv[3], int(sys.argv[4])),
+        mode  = (sys.argv[5])
     )

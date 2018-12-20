@@ -19,7 +19,8 @@ from demo import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
-    url(r'^init$', views.init, name='init'),
+    url(r'^initpow$', views.initpow, name='initpow'),
+    url(r'^initpos$', views.initpos, name='initpos'),
     url(r'^close$', views.close, name='close'),
     url(r'^add$', views.add, name='add'),
     url(r'^delete$', views.delete, name='delete'),

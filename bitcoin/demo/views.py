@@ -9,7 +9,18 @@ sys.path.append('../')
 from main import *
 
 
-def init(request):
+def initpow(request):
+    setMode("pow")
+    startNet()
+    return render(request, 'init.html')
+
+
+def initpos(request):
+    setMode("pos")
+    startNet()
+    return render(request, 'init.html')
+
+def startNet():
     try:
         delete_log()
         deleteCMD()
@@ -51,7 +62,6 @@ def init(request):
 
         os.system("killall -SIGKILL xterm")
         os.system("mn --clean > /dev/null 2>&1")
-    return render(request, 'init.html')
 
 
 def close(request):
