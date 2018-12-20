@@ -20,6 +20,8 @@ from demo import views
 urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^initpow$', views.initpow, name='initpow'),
+    url(r'^initBGP$', views.initBGP, name='initBGP'),
+    url(r'^BGPattack$', views.BGPattack, name='BGPattack'),
     url(r'^initpos$', views.initpos, name='initpos'),
     url(r'^close$', views.close, name='close'),
     url(r'^add$', views.add, name='add'),

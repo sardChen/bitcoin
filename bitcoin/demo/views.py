@@ -20,11 +20,16 @@ def initpos(request):
     startNet()
     return render(request, 'init.html')
 
-def startNet():
+def initBGP(request):
+    setMode("pow")
+    startNet(attack="BGP")
+    return render(request, 'init.html')
+
+def startNet(attack="none"):
     try:
         delete_log()
         deleteCMD()
-        setupP2PNet(4, 3, netType='star')
+        setupP2PNet(4, 3, netType='star',attack=attack)
         recordNodesInfo()
 
         threads = []
@@ -315,6 +320,54 @@ def mine(request):
                                           'tx_info': tx_info,
                                           'wallet_info': wallet_info,
                                           })
+
+
+def BGPattack(request):
+    host_name = request.session.get('hostname')
+    host_ip = ""
+    host_id = ""
+    host_addr = ""
+    block_info = []
+
+    with open(os.path.join(cur_path, 'Logs/main'), 'r') as f:
+        lines = f.readlines()
+        for line in lines:
+            line_split = line.strip().split()
+            if line_split[1] == host_name:
+                host_ip = line_split[0]
+                break
+
+    with open(os.path.join(cur_path, 'CMD/'+host_ip), 'w') as f:
+        f.write('join\n')
+
+    folder_path = os.path.join(cur_path, 'Logs/' + host_ip)
+    base_info_path = os.path.join(folder_path, 'baseInfo')
+    block_info_path = os.path.join(folder_path, 'BlockInfo')
+    TX_info_path = os.path.join(folder_path, 'TXInfo')
+    wallet_path = os.path.join(folder_path, 'wallet')
+
+    sleep(3)
+
+    with open(base_info_path, 'r') as f:
+        lines = f.readlines()
+        host_id = lines[0].strip()
+        host_addr = lines[1].strip()
+
+    block_info = get_data(block_info_path)
+    tx_info = get_data(TX_info_path)
+    wallet_info = get_data(wallet_path)
+
+    print(host_id, host_addr)
+    print(block_info)
+    print(tx_info)
+
+    return render(request, 'index.html', {'host_name': host_name,
+                                          'base_info': [host_id, host_addr],
+                                          'block_info': block_info,
+                                          'tx_info': tx_info,
+                                          'wallet_info': wallet_info,
+                                          })
+
 
 
 def send_tx(request):

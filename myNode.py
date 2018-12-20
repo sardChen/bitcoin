@@ -92,8 +92,9 @@ class Node(myRPCProtocol):
             self.blockchain.chain.append(newBlock);
         else:
             print("run resolve_conflicts()!!!")
-            loop = asyncio.get_event_loop();
-            loop.run_until_complete(self.resolve_conflicts())
+            # loop = asyncio.get_event_loop();
+            # loop.run_until_complete(self.resolve_conflicts())
+            asyncio.ensure_future(self.resolve_conflicts())
             # self.resolve_conflicts()
 
         IDlist = self.blockchain.getAllTX()
@@ -126,6 +127,32 @@ class Node(myRPCProtocol):
             self.routingTable.add(peerID, peers[peerID])
 
         # self.routingTable.printTable();
+
+    @asyncio.coroutine
+    def BGPjoin(self):
+
+        # print(self.ID, "Pinging ", peer)
+        print("myIP: ", self.local_addr, " myID: ", self.ID)
+        try:
+            yield from self.download_blockchain_all();
+        except socket.timeout:
+            print("Could not download blockchain", "BGPNode")
+            return
+
+        try:
+            tx_id = self.create_transaction(self.blockchain, self.ID, self.ID,
+                                            0)
+            self.logger.info('init get transactinon from miner = ')
+            self.logger.info(self.blockchain.current_transactions)
+            self.recordTXInfo()
+            yield from self.postBoardcast(random_id(), 'recordTX', self.ID,
+                                          self.blockchain.current_transactions[-1]);
+        except socket.timeout:
+            print("Could not get money from node0", "BGPNode")
+            return
+
+
+
 
 
     @asyncio.coroutine
@@ -239,7 +266,7 @@ class Node(myRPCProtocol):
                 # Check if the length is longer and the chain is valid
                 # if the blockchain length is 2 block head current blockchain
                 # TODO test receive blockchain length
-                print(length," !!!!!!  " ,self_length)
+                print(length," !!!!!!  " ,self_length, "  ",self.blockchain.check_chain(chain))
                 if length - 1 > self_length and self.blockchain.check_chain(chain):
                     self_length = length
                     new_chain = chain
@@ -312,6 +339,23 @@ class Node(myRPCProtocol):
             self.blockchain.stop=False;
 
 
+    def mine_quick(self):
+        last_block = self.blockchain.last_block
+        last_proof = last_block['proof']
+        # use pos (very quick)
+        proof = self.blockchain.pos(last_proof)
+
+        # 给pos的节点提供奖励.
+        # 发送者为 "0" 表明是新挖出的币
+        self.blockchain.new_transaction(
+            sender="0",
+            recipient=self.ID,
+            amount=random.randint(1, 10),
+        )
+
+        # Forge the new Block by adding it to the chain
+        self.blockchain.new_block(proof)
+
 
     @asyncio.coroutine
     def startPOS(self):
@@ -337,21 +381,7 @@ class Node(myRPCProtocol):
             if leader == True:
                 print(self.ID, ' has mined new block ')
 
-                last_block = self.blockchain.last_block
-                last_proof = last_block['proof']
-                # use pos (very quick)
-                proof = self.blockchain.pos(last_proof)
-
-                # 给pos的节点提供奖励.
-                # 发送者为 "0" 表明是新挖出的币
-                self.blockchain.new_transaction(
-                    sender="0",
-                    recipient=self.ID,
-                    amount=random.randint(1, 10),
-                )
-
-                # Forge the new Block by adding it to the chain
-                self.blockchain.new_block(proof)
+                self.mine_quick()
 
                 self.logger.info('after mining, blockchain = ')
                 self.logger.info(self.blockchain.chain)
@@ -633,8 +663,14 @@ class Node(myRPCProtocol):
             except socket.timeout:
                 print(self.ID, ": could not postBoardcast")
                 return
+        elif cmd in ["join"]:
+            try:
+                await self.join(("10.0.0.1",9000))
+            except socket.timeout:
+                print(self.ID, ": could not join 10.0.0.1")
+                return
         elif cmd in ["mine"]:
-            response = self.mine(self.blockchain, self.ID)
+            self.mine_quick()
             # IDlist = [x.id for x in self.blockchain.chain[-1]['transactions']]
             # self.blockchain.removeSomeTX(IDlist)
             self.logger.info('after mining, blockchain = ')
