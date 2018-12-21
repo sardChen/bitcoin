@@ -22,14 +22,21 @@ def initpos(request):
 
 def initBGP(request):
     setMode("pow")
-    startNet(attack="BGP")
+    startNet(attack="BGP", attack_num=1)
     return render(request, 'init.html')
 
-def startNet(attack="none"):
+def initdouble(request):
+    setMode("pow")
+    startNet(attack="double", attack_num=1)
+    return render(request, 'init.html')
+
+
+
+def startNet(attack="none",attack_num=1):
     try:
         delete_log()
         deleteCMD()
-        setupP2PNet(4, 3, netType='star',attack=attack)
+        setupP2PNet(5, 1, netType='star',attack=attack,attack_num=1)
         recordNodesInfo()
 
         threads = []

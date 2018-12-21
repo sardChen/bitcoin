@@ -78,6 +78,40 @@ class BlockChain(object):
         self.chain.append(block)
         return block
 
+    def new_hackblock(self, proof, node_id, amount, previous_hash=None):
+        """
+        生成双花新块
+        :param proof: <int> The proof given by the Proof of Work algorithm
+        :param previous_hash: (Optional) <str> Hash of previous Block
+        :return: <dict> New Block
+        """
+
+        valid_transactions, invalid_transactions = self.check_transactions()
+
+        id = random_id()
+        valid_transactions.append({
+            'id': id,
+            'sender': node_id,
+            'recipient': -1,
+            'amount': amount,
+        })
+
+        block = {
+            'index': len(self.chain) + 1,
+            'timestamp': time(),
+            'transactions': valid_transactions,
+            'proof': proof,
+            'previous_hash': previous_hash or self.hash(self.chain[-1]),
+            'minerID': self.node_id,
+            'minerAmount': self.current_transactions[-1]['amount'],
+        }
+
+        print(node_id, " withdraw ", amount, " money from bank!")
+
+
+        return block
+
+
     def new_transaction(self, sender, recipient, amount):
         """
         生成新交易信息，信息将加入到下一个待挖的区块中

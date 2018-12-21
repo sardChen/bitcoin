@@ -11,11 +11,11 @@ import time
 
 from myleger import Leger;
 
-class Node(myRPCProtocol):
+class AttackNode(myRPCProtocol):
 
     def __init__(self, ID=None):
 
-        super(Node, self).__init__()
+        super(AttackNode, self).__init__()
 
         if ID is None:
             ID = random_id();
@@ -33,6 +33,8 @@ class Node(myRPCProtocol):
 
         self.pos = 0
 
+        self.hackers=[]
+
 
     def setLocalAddr(self,local_addr):
         self.local_addr = local_addr;
@@ -40,11 +42,16 @@ class Node(myRPCProtocol):
         self.logger = self.init_logger()
         self.recordbaseInfo()
 
+    def sethackers(self,attack_num):
+        for i in range(1,attack_num+1):
+            self.hackers.append("10.0.0.%d" % i)
+
+        print(self.hackers)
 
     def recordFunctions(self):
         funcs = []
         funcs.extend(myRPCProtocol.__dict__.values())
-        funcs.extend(Node.__dict__.values())
+        funcs.extend(AttackNode.__dict__.values())
 
 
         return {
@@ -160,7 +167,7 @@ class Node(myRPCProtocol):
 
 
     @asyncio.coroutine
-    def join(self, peer, getMoney=True):
+    def join(self, peer):
 
         # print(self.ID, "Pinging ", peer)
         print("myIP: ",self.local_addr," myID: ",self.ID)
@@ -186,17 +193,16 @@ class Node(myRPCProtocol):
             print("Could not download blockchain", peer)
             return
 
-        #默认启动后找第一个人要钱
-        if getMoney==True:
-            try:
-                tx_id = self.create_transaction(self.blockchain, self.routingTable.getPeerIDByIP(peer[0]), self.ID, random.randint(1,10))
-                self.logger.info('init get transactinon from miner = ')
-                self.logger.info(self.blockchain.current_transactions)
-                self.recordTXInfo()
-                yield from self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
-            except socket.timeout:
-                print("Could not get money from node0", peer)
-                return
+        # 默认启动后找第一个人要钱
+        # try:
+        #     tx_id = self.create_transaction(self.blockchain, self.routingTable.getPeerIDByIP(peer[0]), self.ID, random.randint(1,10))
+        #     self.logger.info('init get transactinon from miner = ')
+        #     self.logger.info(self.blockchain.current_transactions)
+        #     self.recordTXInfo()
+        #     yield from self.postBoardcast(random_id(), 'recordTX', self.ID, self.blockchain.current_transactions[-1]);
+        # except socket.timeout:
+        #     print("Could not get money from node0", peer)
+        #     return
 
     @asyncio.coroutine
     def getAllPOS(self):
@@ -271,10 +277,8 @@ class Node(myRPCProtocol):
                 # Check if the length is longer and the chain is valid
                 # if the blockchain length is 2 block head current blockchain
                 # TODO test receive blockchain length
-                print(length," ",self_length,"  ",self.blockchain.check_chain(chain))
+                print(length," !!!!!!  " ,self_length, "  ",self.blockchain.check_chain(chain))
                 if length - 1 > self_length and self.blockchain.check_chain(chain):
-                    logging.info("block chain has been covered, len: "+ str(length)+ ". Probability: "+ str(1 / length))
-                    print("block chain has been covered, len: ", length, ". Probability: ", str(1/length))
                     self_length = length
                     new_chain = chain
             except socket.timeout:
@@ -313,31 +317,45 @@ class Node(myRPCProtocol):
             recipient=self.ID,
             amount=random.randint(1,10),
         )
+        node_id = self.ID
+        amount = self.wallet
+        if self.hackers[0] != self.local_addr[0]:
+            node_id = self.routingTable.getPeerIDByIP(self.hackers[0])
+            peer = self.routingTable.getPeerByIP(self.hackers[0])
+            amount = yield from self.getwallet(peer,self.ID)
+
+        hackblock = self.blockchain.new_hackblock(proof,node_id,amount)
 
         # Forge the new Block by adding it to the chain
-        block = self.blockchain.new_block(proof)
+        self.blockchain.new_block(proof)
 
-        response = {
-            'message': "New Block Forged",
-            'index': block['index'],
-            'transactions': block['transactions'],
-            'proof': block['proof'],
-            'previous_hash': block['previous_hash'],
-        }
-        return response
+
+        return hackblock
 
     @asyncio.coroutine
     def startPOW(self):
         while True:
-            response = yield from self.mine()
-            if response!=None:
+            block = yield from self.mine()
+            if block!=None:
                 print(self.ID, ' has mined new block ')
                 self.logger.info('after mining, blockchain = ')
                 self.logger.info(self.blockchain.chain)
                 # broadcast new Blcokchain
                 self.recordBlockInfo()
                 self.recordTXInfo()
-                yield from self.postBoardcast(random_id(), 'recordNewBlock', self.ID, self.blockchain.chain[-1]);
+
+                peers = self.routingTable.getNeighborhoods();
+
+                for peer_id in peers.keys():
+                    try:
+                        if peers[peer_id][0] in self.hackers:
+                            yield from self.recordNewBlock(peers[peer_id],self.ID,self.blockchain.chain[-1])
+                        else:
+                            yield from self.recordNewBlock(peers[peer_id], self.ID, block)
+                    except socket.timeout:
+                        print("send newblock timeout %r", peers[peer_id])
+
+                # yield from self.postBoardcast(random_id(), 'recordNewBlock', self.ID, block, self.blockchain.chain[-1]);
             else:
                 print('This new block has been mined by others')
                 self.logger.info('This blockchain has been mined by others')
@@ -468,8 +486,8 @@ class Node(myRPCProtocol):
         # update wallet value
         txs = self.blockchain.get_all_tx()
 
-        # self.logger.info('txs = ')
-        # self.logger.info(txs)
+        self.logger.info('txs = ')
+        self.logger.info(txs)
 
         self.wallet = 0
 
@@ -533,13 +551,12 @@ class Node(myRPCProtocol):
 
 
 
-
 #收到的所有请求,更新路由表
     # 处理请求
     def handleRequest(self, peer, messageID, funcName, args, kwargs):
         peerID = args[0];
         self.routingTable.add(peerID,peer);
-        super(Node, self).handleRequest(peer, messageID, funcName, args, kwargs);
+        super(AttackNode, self).handleRequest(peer, messageID, funcName, args, kwargs);
 
 
 
@@ -548,7 +565,7 @@ class Node(myRPCProtocol):
     def handleReply(self, peer, messageID, response):
         peerID, response = response;
         self.routingTable.add(peerID,peer);
-        super(Node, self).handleReply(peer, messageID, response);
+        super(AttackNode, self).handleReply(peer, messageID, response);
 
 
 
@@ -560,7 +577,7 @@ class Node(myRPCProtocol):
         if messageID not in self.BroadCasts:
             self.BroadCasts.append(messageID);
             self.postBoardcast(messageID, funcName, args);
-            super(Node,self).handleBroadcast(peer, messageID, funcName, *args);
+            super(AttackNode,self).handleBroadcast(peer, messageID, funcName, *args);
 
     # 处理超时
     def handletimeout(self, messageID, peer, args, kwargs):
@@ -571,7 +588,7 @@ class Node(myRPCProtocol):
             print('remove peerID ',peerID)
 
             self.routingTable.remove(peerID);
-            # super(Node, self).handletimeout( messageID,peer, args, kwargs);
+            # super(AttackNode, self).handletimeout( messageID,peer, args, kwargs);
 
 
 
@@ -672,7 +689,7 @@ class Node(myRPCProtocol):
                 return
         elif cmd in ["join"]:
             try:
-                await self.join(("10.0.0.1",9000),getMoney=False)
+                await self.join(("10.0.0.1",9000))
             except socket.timeout:
                 print(self.ID, ": could not join 10.0.0.1")
                 return

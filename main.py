@@ -59,7 +59,7 @@ def setMode(mode):
     global MODE;
     MODE = mode;
 
-def setupP2PNet(arg1=1, arg2=3, netType="net", attack="none"):
+def setupP2PNet(arg1=1, arg2=3, netType="net", attack="none",attack_num=1):
 
     global P2PNet;
 
@@ -101,8 +101,12 @@ def setupP2PNet(arg1=1, arg2=3, netType="net", attack="none"):
         print(i,host.IP)
         if(i>=0):
             print( host.cmd("ping -c1 10.0.0.1"))
-        if attack=="BGP" and (i== arg1-1) :
+        if attack=="BGP" and (i>= arg1-attack_num) :
             cmd = xtermCMD(host.IP(), PORT, P2PNet.hosts[0].IP(), PORT, MODE,nodeType="BGP")
+        elif attack=="double" and (i< attack_num) :
+            cmd = xtermCMD(host.IP(), PORT, P2PNet.hosts[0].IP(), PORT, str(attack_num),nodeType="double")
+        elif attack == "double":
+            cmd = xtermCMD(host.IP(), PORT, P2PNet.hosts[0].IP(), PORT, "double", nodeType="normal")
         else:
             cmd= xtermCMD(host.IP(), PORT, P2PNet.hosts[0].IP(), PORT, MODE)
         print(cmd)
@@ -281,7 +285,7 @@ if __name__ == '__main__':
     try:
         delete_log();
         deleteCMD();
-        setupP2PNet(4,3,netType='star',attack="BGP");
+        setupP2PNet(5,4,netType='star',attack="double", attack_num=3);
         myCommand().cmdloop();
     except SystemExit:
         pass
