@@ -5,6 +5,7 @@ import signal
 
 from myAttackNode import AttackNode
 from myNode import Node
+from myPBFTNode import PBFTNode
 
 def setupNode(local_addr, peer_addr, mode):
 
@@ -96,6 +97,28 @@ def setupDoubleAttackNode(local_addr, peer_addr, attack_num):
     loop.run_forever()
 
 
+def setupPBFTNode(local_addr, peer_addr, peer_num):
+
+    loop = asyncio.get_event_loop()
+
+    loop.add_signal_handler(signal.SIGINT, loop.stop)
+
+    #将节点node与IP,port 绑定在一起
+    f = loop.create_datagram_endpoint(PBFTNode, local_addr=local_addr)
+    _, node = loop.run_until_complete(f)
+
+
+    node.setLocalAddr(local_addr)
+    node.setPeer_num(peer_num)
+
+    loop.run_until_complete(node.join(peer_addr,getMoney=True))
+
+
+    loop.create_task(node.nodeCommand())
+
+    loop.create_task(node.fileCommand())
+
+    loop.run_forever()
 
 if __name__ == '__main__':
     if sys.argv[6] == "BGP" :
@@ -109,6 +132,12 @@ if __name__ == '__main__':
             local_addr=(sys.argv[1], int(sys.argv[2])),
             peer_addr=(sys.argv[3], int(sys.argv[4])),
             attack_num=int(sys.argv[5])
+        )
+    elif sys.argv[5] == "PBFT" :
+        setupPBFTNode(
+            local_addr=(sys.argv[1], int(sys.argv[2])),
+            peer_addr=(sys.argv[3], int(sys.argv[4])),
+            peer_num=int(sys.argv[6])
         )
     else:
         setupNode(
