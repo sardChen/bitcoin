@@ -64,6 +64,8 @@
 					</div>
 					<div class="col-lg-3">
 						<button class="btn btn-danger"  onclick="mine('{{ host_name }}')"> 执行挖矿 </button >
+                        <button class="btn btn-danger"  onclick="BGPattack('{{ host_name }}')"> BGP攻击 </button >
+                        <button class="btn btn-danger"  onclick="PBFT('{{ host_name }}')"> PBFT </button >
 						<br></br>
 						<input class="form-control"  style="width:45%; display:inline" placeholder="对方节点" id="receiver">
 						<input class="form-control"  style="width:45%; display:inline" placeholder="交易额" id="amount">
@@ -293,6 +295,16 @@
 		function mine(name) {
             {#alert(name);#}
             window.location.href = "mine";
+		}
+
+		function PBFT(name) {
+            {#alert(name);#}
+            window.location.href = "PBFT";
+		}
+
+		function BGPattack(name) {
+            {#alert(name);#}
+            window.location.href = "BGPattack";
 		}
 		
 		function createTX(name) {
