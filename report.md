@@ -2,8 +2,8 @@
 
 组长: 2017213867 陈元亮\
 组员: 2017312355 梁杰\
-		 2017213854 赵越\
-		 2017311694 牛惠
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 2017213854 赵越\
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; 2017311694 牛惠
 
 # 系统设计
 
@@ -270,7 +270,7 @@ PoS(Proof of stake)直观来看就是拥有更多财产的节点，有更大的�
 <br/>
 
 
-## 11 实验内容完成情况
+# 实验内容完成情况
 
 项目所有代码以开源至git，地址为https://github.com/131250106/bitcoin, git上代码统计行数为(11,681 ++  1,283 --)
 
@@ -300,5 +300,5 @@ PoS(Proof of stake)直观来看就是拥有更多财产的节点，有更大的�
 - [x] **实验四：探索新的共识算法**
   - [x] 探索其它共识方法如proof of stake/proof of retrievability等			——具体实现，详见源码myNode.py中的startPOS函数
 
-## 12 演示形式
+# 演示形式
 //TODO
