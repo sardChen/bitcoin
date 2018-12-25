@@ -214,7 +214,7 @@ PoS(Proof of stake)直观来看就是拥有更多财产的节点，有更大的�
 - commit方法里计数被调了多少次，若大于一半的N，则记录这个block, 同时调用交易节点的reply方法
 - 交易结点的reply方法里计数，若大于一半的N，记录这个block,钱包扣钱， 调用大家的计数清零函数
 
-![image](./img/pbft.PNG)
+![image](./img/pbft.png)
 
 <br/>
 
