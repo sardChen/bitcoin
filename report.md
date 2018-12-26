@@ -80,6 +80,8 @@ Django是一个开源的Web应用框架，由Python语言编写，其主要使�
 
 ![image](./img/demo.PNG)
 
+在[演示形式](#jump)章节会有详细介绍。
+
 ## 2 系统模块设计
 
 本项目的系统模块图如下图所示：
@@ -301,5 +303,70 @@ PoS(Proof of stake)直观来看就是拥有更多财产的节点，有更大的�
 - [x] **实验四：探索新的共识算法**
   - [x] 探索其它共识方法如proof of stake/proof of retrievability等			——具体实现，详见源码myNode.py中的startPOS函数
 
-# 演示形式
-//TODO
+<br/>
+
+# <span id="jump">演示形式<span>
+
+## 可视化页面内容展示
+
+### 1 网络结构
+
+![image](./img/network.PNG)
+
+可以展示的网络拓扑结构有星型、环形、树形等，上图为星形拓扑，有5个节点，s1为交换机。
+
+### 2 节点信息
+
+![image](./img/nodeinfo.PNG)
+
+主要展示节点ID、节点地址、钱包余额信息。
+
+### 3 交易信息
+
+![image](./img/transaction.PNG)
+
+主要展示节点中未确认的交易信息。
+
+### 4 区块链信息
+
+![image](./img/blockchain.PNG)
+
+主要展示节点中的区块链信息。
+
+### 5 创建交易功能展示
+
+![image](./img/createtx.PNG)
+
+主要展示通过提供IP和比特币数量创建交易功能。
+
+## BGP攻击过程展示
+
+### 1 网络结构
+
+![image](./img/BGPnetwork.PNG)
+
+上图为星形拓扑，有5个节点，s1为交换机。h5s1为攻击者节点，其余节点为受害者节点。
+
+### 2 受害者节点信息
+
+![image](./img/beforeBGPvictim.PNG)
+
+可以看出受害者节点区块链长度为2。
+
+### 3 攻击者节点信息
+
+![image](./img/attack.PNG)
+
+可以看出攻击者节点区块链长度为5。
+
+### 4 BGP攻击后网络结构
+
+![image](./img/afterBGPnetwork.PNG)
+
+可以看出攻击者释放BGP劫持后2个网络互通。
+
+### 5 BGP攻击后受害者节点信息
+
+![image](./img/afterBGPvictim.PNG)
+
+可以看出BGP劫持后受害者节点的区块链被攻击者所覆盖。
