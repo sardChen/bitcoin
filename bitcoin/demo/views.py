@@ -11,28 +11,33 @@ from main import *
 
 def initpow(request):
     setMode("pow")
+    request.session['type'] = "pow"
     startNet()
     return render(request, 'init.html')
 
 
 def initpos(request):
     setMode("pos")
+    request.session['type'] = "pos"
     startNet()
     return render(request, 'init.html')
 
 def initPBFT(request):
     setMode("PBFT")
+    request.session['type'] = "PBFT"
     startNet()
     return render(request, 'init.html')
 
 
 def initBGP(request):
     setMode("pow")
+    request.session['type'] = "BGP"
     startNet(attack="BGP", attack_num=1)
     return render(request, 'init.html')
 
 def initdouble(request):
     setMode("pow")
+    request.session['type'] = "pow"
     startNet(attack="double", attack_num=1)
     return render(request, 'init.html')
 
@@ -43,7 +48,7 @@ def startNet(attack="none",attack_num=1):
         delete_log()
         deleteCMD()
         setupP2PNet(5, 1, netType='star',attack=attack,attack_num=1)
-        recordNodesInfo()
+        recordNodesInfo(attack=attack,attack_num=attack_num)
 
         threads = []
         t1 = threading.Thread(target=fileCommand)
@@ -61,9 +66,15 @@ def startNet(attack="none",attack_num=1):
                 line_split = line.strip().split()
 
                 if i == len(lines) - 1:
-                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"}\n' % (line_split[1], line_split[0])
+                    if line_split[-1] == "BGP":
+                        p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"}\n' % (line_split[1], line_split[1], line_split[0])
+                    else:
+                        p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"}\n' % (line_split[1], line_split[0])
                 else:
-                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"},\n' % (line_split[1], line_split[0])
+                    if line_split[-1] == "BGP":
+                        p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"},\n' % (line_split[1], line_split[1], line_split[0])
+                    else:
+                        p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"},\n' % (line_split[1], line_split[0])
                 p2p_json.append(p2p_line)
 
         p2p_json.append(']\n')
@@ -99,15 +110,21 @@ def add(request):
     p2p_json = ['[\n', '{"source":"s1","target":"s1","region":"switch1"},\n']
     with open(os.path.join(cur_path, 'Logs/main'), 'r') as f:
         lines = f.readlines()
-        print('Logs/main')
-        print(lines)
         for i, line in enumerate(lines):
             line_split = line.strip().split()
 
             if i == len(lines) - 1:
-                p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"}\n' % (line_split[1], line_split[0])
+                if line_split[-1] == "BGP":
+                    p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"}\n' % (
+                    line_split[1], line_split[1], line_split[0])
+                else:
+                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"}\n' % (line_split[1], line_split[0])
             else:
-                p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"},\n' % (line_split[1], line_split[0])
+                if line_split[-1] == "BGP":
+                    p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"},\n' % (
+                    line_split[1], line_split[1], line_split[0])
+                else:
+                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"},\n' % (line_split[1], line_split[0])
             p2p_json.append(p2p_line)
 
     p2p_json.append(']\n')
@@ -172,16 +189,22 @@ def delete(request):
     # star network
     p2p_json = ['[\n', '{"source":"s1","target":"s1","region":"switch1"},\n']
     with open(os.path.join(cur_path, 'Logs/main'), 'r') as f:
-        print('Logs/main')
         lines = f.readlines()
-        print(lines)
         for i, line in enumerate(lines):
             line_split = line.strip().split()
 
             if i == len(lines) - 1:
-                p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"}\n' % (line_split[1], line_split[0])
+                if line_split[-1] == "BGP":
+                    p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"}\n' % (
+                    line_split[1], line_split[1], line_split[0])
+                else:
+                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"}\n' % (line_split[1], line_split[0])
             else:
-                p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"},\n' % (line_split[1], line_split[0])
+                if line_split[-1] == "BGP":
+                    p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"},\n' % (
+                    line_split[1], line_split[1], line_split[0])
+                else:
+                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"},\n' % (line_split[1], line_split[0])
             p2p_json.append(p2p_line)
 
     p2p_json.append(']\n')
@@ -400,13 +423,42 @@ def BGPattack(request):
     with open(os.path.join(cur_path, 'CMD/'+host_ip), 'w') as f:
         f.write('join\n')
 
+    with open(os.path.join(cur_path, 'CMD/main'), 'w') as f:
+        f.write('recordNodesInfo\n')
+
+
     folder_path = os.path.join(cur_path, 'Logs/' + host_ip)
     base_info_path = os.path.join(folder_path, 'baseInfo')
     block_info_path = os.path.join(folder_path, 'BlockInfo')
     TX_info_path = os.path.join(folder_path, 'TXInfo')
     wallet_path = os.path.join(folder_path, 'wallet')
 
-    sleep(3)
+    sleep(4)
+
+    p2p_json = ['[\n', '{"source":"s1","target":"s1","region":"switch1"},\n']
+    with open(os.path.join(cur_path, 'Logs/main'), 'r') as f:
+        lines = f.readlines()
+        for i, line in enumerate(lines):
+            line_split = line.strip().split()
+
+            if i == len(lines) - 1:
+                if line_split[-1] == "BGP":
+                    p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"}\n' % (
+                        line_split[1], line_split[1], line_split[0])
+                else:
+                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"}\n' % (line_split[1], line_split[0])
+            else:
+                if line_split[-1] == "BGP":
+                    p2p_line = '{"source":"%s","target":"%s","region":"(%s:9000)"},\n' % (
+                        line_split[1], line_split[1], line_split[0])
+                else:
+                    p2p_line = '{"source":"%s","target":"s1","region":"(%s:9000)"},\n' % (line_split[1], line_split[0])
+            p2p_json.append(p2p_line)
+
+    p2p_json.append(']\n')
+    with open(os.path.join(cur_path, 'bitcoin/demo/static/data/p2p.json'), 'w') as f:
+        f.writelines(p2p_json)
+
 
     with open(base_info_path, 'r') as f:
         lines = f.readlines()

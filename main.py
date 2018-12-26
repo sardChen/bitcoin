@@ -92,7 +92,7 @@ def setupP2PNet(arg1=1, arg2=3, netType="net", attack="none",attack_num=1):
 
     P2PNet.start();
     #限制带宽
-    P2PNet.iperf()
+    # P2PNet.iperf()
 
     for i, s in enumerate(P2PNet.switches):
         print(i,s.IP)
@@ -119,11 +119,14 @@ def setupP2PNet(arg1=1, arg2=3, netType="net", attack="none",attack_num=1):
     with open(os.path.join(path,"main"), 'w') as f:
         f.close()
 
-def recordNodesInfo():
+def recordNodesInfo(attack="none",attack_num=0):
     path = os.path.join(cur_path, 'Logs')
     with open(os.path.join(path, "main"), 'w') as f:
-        for _, host in enumerate(P2PNet.hosts):
-            f.write(str(host.IP()) +" "+ host.name+"\n")
+        for i, host in enumerate(P2PNet.hosts):
+            if attack=="BGP" and i>=len(P2PNet.hosts)-attack_num:
+                f.write(str(host.IP()) + " " + host.name +" "+ "BGP\n")
+            else:
+                f.write(str(host.IP()) +" "+ host.name+"\n")
 
 def readCommnadFromFile():
     path = os.path.join(cur_path, 'CMD')
@@ -149,7 +152,9 @@ def fileCommand():
                 cmd = line[0];
                 args = line[1:];
 
-                if cmd in ["delNode"]:
+                if cmd in ["recordNodesInfo"]:
+                    recordNodesInfo()
+                elif cmd in ["delNode"]:
                     hostName = args[0].strip()
                     node = None;
                     for host in P2PNet.hosts:
@@ -288,7 +293,7 @@ if __name__ == '__main__':
         delete_log();
         deleteCMD();
         # setupP2PNet(5,1,netType='star',attack="double", attack_num=1);
-        setMode("PBFT")
+        # setMode("PBFT")
         setupP2PNet(5,1,netType='star');
         myCommand().cmdloop();
     except SystemExit:

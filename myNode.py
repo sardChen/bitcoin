@@ -673,6 +673,13 @@ class Node(myRPCProtocol):
         elif cmd in ["join"]:
             try:
                 await self.join(("10.0.0.1",9000),getMoney=False)
+                self.mine_quick()
+                self.logger.info('after mining, blockchain = ')
+                self.logger.info(self.blockchain.chain)
+                self.recordBlockInfo()
+                self.recordTXInfo()
+                await self.postBoardcast(random_id(), 'recordNewBlock', self.ID, self.blockchain.chain[-1]);
+
             except socket.timeout:
                 print(self.ID, ": could not join 10.0.0.1")
                 return
