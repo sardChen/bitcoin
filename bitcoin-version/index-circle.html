@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+
+<style>
+    .row-center {
+        text-align: center;
+    }
+
+    .link {
+        fill: none;
+        stroke: #666;
+        stroke-width: 1.5px;
+    }
+
+    .node circle {
+        fill: #ccc;
+        stroke: #fff;
+        stroke-width: 1.5px;
+    }
+
+    text {
+        pointer-events: none;
+    }
+
+    .tooltip {
+        text-decoration: underline;
+    }
+</style>
+
+<head>
+<title>bitoin网络拓扑图</title>
+<!-- Bootstrap core CSS -->
+<link href="css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+
+    <div class="row-center"><h1>比特币网络分布图</h1></div>
+	<div>
+     <svg width="100%" height="500px" id="forcesvg">
+	 <g id="tooltip2"></g>
+    </svg>
+		<button class="btn btn-danger" style="float:right;margin-right: 20px;color:#007bff;background-color:#fff;border:1px solid #ddd" onclick="addNode()"> 新增节点 </button >
+		<button class="btn btn-danger" style="float:right;margin-right: 20px;color:#007bff;background-color:#fff;border:1px solid #ddd" onclick="delNode()"> 删除节点 </button >
+    </div>
+	
+	<div class="col-lg-12">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                h1s1节点具体信息
+            </div>
+            <div class="panel-body">
+                    <div class="col-lg-6">
+						<div class="form-group">
+                                <label style="padding-top:5px">节点ID</label>
+                                <p class="help-block" style="width:50%; float:right">1172577464419855914198917326704644841717206287734</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">节点地址</label>
+                                <p class="help-block" style="width:50%; float:right">(10.0.0.1:9000)</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<button class="btn btn-danger"  onclick="mine('h1s1')"> 执行挖矿 </button >
+						<br></br>
+						<input class="form-control"  style="width:45%; display:inline" placeholder="对方节点">
+						<input class="form-control"  style="width:45%; display:inline" placeholder="交易额">
+						<button class="btn btn-danger"  onclick="createTX('h1s1')"> 发送交易 </button >
+					</div>
+					
+					
+						
+            </div>
+			<div class="panel-heading">
+                h1s1节点未确认交易列表
+            </div>
+			<div class="panel-body">
+                    <div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">交易ID</label>
+                                <p class="help-block" style="width:50%; ">1172577464419855914198917326704644841717206287734</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">发送方ID</label>
+                                <p class="help-block" style="width:50%;">1172577464419855914198917326704644841717206287734</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">接收方ID</label>
+                                <p class="help-block" style="width:50%;">1455812023565616629824382806744321817014664613766</p>
+                        </div>
+					</div>
+					<div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">交易额</label>
+                                <p class="help-block" style="width:50%;">12 bitcoin</p>
+                        </div>
+					</div>
+            </div>
+			
+			<div class="panel-heading">
+                h1s1节点区块链信息
+            </div>
+			<div class="panel-body">
+                    <div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">区块ID</label>
+                                <p class="help-block" style="width:50%; ">1</p>
+                        </div>
+					</div>
+					<div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">proof</label>
+                                <p class="help-block" style="width:50%;">206</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">矿工ID</label>
+                                <p class="help-block" style="width:50%;">1455812023565616629824382806744321817014664613766</p>
+                        </div>
+					</div>
+					<div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">矿工奖励额</label>
+                                <p class="help-block" style="width:50%;">1 bitcoin</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">已确认交易ID</label>
+                                <p class="help-block" style="width:50%;">1172577464419855914198917326704644841717206287734</p>
+								<p class="help-block" style="width:50%;">1455812023565616629824382806744321817014664613766</p>
+								<p class="help-block" style="width:50%;">1123123123123123121213132806744321817014664613766</p>
+                        </div>
+					</div>
+            </div>
+			
+            <div class="panel-footer">
+            </div>
+        </div>
+    </div>
+	
+	
+
+    <script src="js/d3.v3.min.js"></script>
+    <script>
+
+        d3.json("data/p2p-circle.json", function (err, links) {
+            var color = d3.scale.category20();
+
+            var nodes = {};
+
+            // 从links计算nodes
+            links.forEach(function (link) {
+                link.source = nodes[link.source] || (nodes[link.source] = { name: link.source, region: link.region });
+                link.target = nodes[link.target] || (nodes[link.target] = { name: link.target, region: link.region });
+            });
+
+            var width = 1280,
+                height = 700;
+
+            // 力布局
+            var force = d3.layout.force()
+                .nodes(d3.values(nodes))
+                .links(links)
+                .size([width, height])
+                .linkDistance(50)
+                .charge(-1500)
+                .on("tick", tick)
+                .start();
+
+			
+			var svg = d3.select("#forcesvg");
+
+            var link = svg.selectAll(".link")
+                .data(force.links())
+                .enter().append("line")
+                .attr("class", "link");
+
+			// 定义tooltip,在svg上加上class g的标签
+			var tooltip = d3.select("#tooltip2");
+            
+         
+
+            tooltip.append("text")
+                .attr("x", 15)
+                .attr("dy", "1.2em")
+                .style("font-size", "1.35em")
+                .attr("font-weight", "bold");
+
+            // 添加node及鼠标事件
+            var node = svg.selectAll(".node")
+                .data(force.nodes())
+                .enter().append("g")
+                .attr("class", "node")
+                .on("mouseover", mouseover)
+                .on("mouseout", mouseout)
+				.on("click", click)
+                .call(force.drag);
+
+            node.append("circle")
+                .style("fill", function (d) {
+                    return color(d.region);
+                })
+                .attr("r", 16);
+
+            node.append("text")
+                .attr("x", 12)
+                .attr("dy", ".35em")
+                .text(function (d) {
+                    return d.name;
+                });
+
+            //定义鼠标移到圆形上的操作
+            node.on("mousemove", function (d) {
+                //获取圆形的坐标
+                var xPos = d.x - 50;
+                var yPos = d.y - 45;
+                tooltip.attr("transform", "translate(" + xPos + "," + yPos + ")");
+                tooltip.select("text").text(d.region);
+            });
+
+            function tick() {
+                link
+                    .attr("x1", function (d) {
+                        return d.source.x;
+                    })
+                    .attr("y1", function (d) {
+                        return d.source.y;
+                    })
+                    .attr("x2", function (d) {
+                        return d.target.x;
+                    })
+                    .attr("y2", function (d) {
+                        return d.target.y;
+                    });
+
+                node
+                    .attr("transform", function (d) {
+                        return "translate(" + d.x + "," + d.y + ")";
+                    });
+            }
+
+            function mouseover() {
+                tooltip.style("display", null);
+                d3.select(this).select("circle").transition()
+                    .duration(750)
+                    .attr("r", 20);
+            }
+
+            function mouseout() {
+                tooltip.style("display", "none");
+                d3.select(this).select("circle").transition()
+                    .duration(750)
+                    .attr("r", 16);
+            }
+			
+			function click() {
+				//alert(d3.select(this).select("text").text());
+				location.reload();
+            }
+        });
+		
+		function addNode() {
+			alert("addNode");
+		}
+		
+		function delNode() {
+			alert("delNode");
+		}
+		
+		function mine(name) {
+			alert(name);
+		}
+		
+		function createTX(name) {
+			alert(name);
+		}
+
+
+    </script>
+</body>

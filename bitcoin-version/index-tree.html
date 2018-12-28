@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>bitoin网络拓扑图</title>
+    <style>
+        .node {
+          cursor: pointer;
+        }
+
+        .node circle {
+          fill: #fff;
+          stroke: steelblue;
+          stroke-width: 1.5px;
+        }
+
+        .node text {
+          font: 14px sans-serif;
+        }
+
+        .link {
+          fill: none;
+          stroke: #ccc;
+          stroke-width: 1.5px;
+        }
+  </style>
+	<!-- Bootstrap core CSS -->
+	<link href="css/bootstrap.min.css" rel="stylesheet">
+</head>
+
+<body>
+    <div class="row-center"><h1>比特币网络分布图</h1></div>
+	<div>
+     <svg width="100%" height="500px" id="forcesvg">
+	 <g id="tooltip2"></g>
+    </svg>
+		<button class="btn btn-danger" style="float:right;margin-right: 20px;color:#007bff;background-color:#fff;border:1px solid #ddd" onclick="addNode()"> 新增节点 </button >
+		<button class="btn btn-danger" style="float:right;margin-right: 20px;color:#007bff;background-color:#fff;border:1px solid #ddd" onclick="delNode()"> 删除节点 </button >
+    </div>
+	
+	<div class="col-lg-12">
+        <div class="panel panel-info">
+            <div class="panel-heading">
+                h1s1节点具体信息
+            </div>
+            <div class="panel-body">
+                    <div class="col-lg-6">
+						<div class="form-group">
+                                <label style="padding-top:5px">节点ID</label>
+                                <p class="help-block" style="width:50%; float:right">1172577464419855914198917326704644841717206287734</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">节点地址</label>
+                                <p class="help-block" style="width:50%; float:right">(10.0.0.1:9000)</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<button class="btn btn-danger"  onclick="mine('h1s1')"> 执行挖矿 </button >
+						<br></br>
+						<input class="form-control"  style="width:45%; display:inline" placeholder="对方节点">
+						<input class="form-control"  style="width:45%; display:inline" placeholder="交易额">
+						<button class="btn btn-danger"  onclick="createTX('h1s1')"> 发送交易 </button >
+					</div>
+					
+					
+						
+            </div>
+			<div class="panel-heading">
+                h1s1节点未确认交易列表
+            </div>
+			<div class="panel-body">
+                    <div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">交易ID</label>
+                                <p class="help-block" style="width:50%; ">1172577464419855914198917326704644841717206287734</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">发送方ID</label>
+                                <p class="help-block" style="width:50%;">1172577464419855914198917326704644841717206287734</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">接收方ID</label>
+                                <p class="help-block" style="width:50%;">1455812023565616629824382806744321817014664613766</p>
+                        </div>
+					</div>
+					<div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">交易额</label>
+                                <p class="help-block" style="width:50%;">12 bitcoin</p>
+                        </div>
+					</div>
+            </div>
+			
+			<div class="panel-heading">
+                h1s1节点区块链信息
+            </div>
+			<div class="panel-body">
+                    <div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">区块ID</label>
+                                <p class="help-block" style="width:50%; ">1</p>
+                        </div>
+					</div>
+					<div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">proof</label>
+                                <p class="help-block" style="width:50%;">206</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">矿工ID</label>
+                                <p class="help-block" style="width:50%;">1455812023565616629824382806744321817014664613766</p>
+                        </div>
+					</div>
+					<div class="col-lg-1">
+						<div class="form-group">
+                                <label style="padding-top:5px">矿工奖励额</label>
+                                <p class="help-block" style="width:50%;">1 bitcoin</p>
+                        </div>
+					</div>
+					<div class="col-lg-3">
+						<div class="form-group">
+                                <label style="padding-top:5px">已确认交易ID</label>
+                                <p class="help-block" style="width:50%;">1172577464419855914198917326704644841717206287734</p>
+								<p class="help-block" style="width:50%;">1455812023565616629824382806744321817014664613766</p>
+								<p class="help-block" style="width:50%;">1123123123123123121213132806744321817014664613766</p>
+                        </div>
+					</div>
+            </div>
+			
+            <div class="panel-footer">
+            </div>
+        </div>
+    </div>
+  
+<script src="js/d3.v3.min.js"></script>
+<script>
+
+    var width = 1280,
+        height = 800;
+
+    var i = 0,
+        duration = 3000,
+        root;
+
+    var tree = d3.layout.tree()
+        .size([120, 100])  //360代表展开的最大角度也就是圆，后面的r值代表整个辐射布局的展开最大半径，并不是指某一层级的半径而是整个树,超过这个范围的就不显示了，后面85行d.y的才是某一层级的半径设置。
+        .separation(function(a, b) {
+            return (a.parent == b.parent ? 1 : 2) / a.depth;  //适应radial布局，可以简单的理解为深度越高，相邻子节点之间的距离越小。
+        });
+
+    var diagonal = d3.svg.diagonal.radial()
+        .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; }); //d.y代表半径，(d.x/180)*PI就是各个节点的弧度表示。
+
+	var svg = d3.select("#forcesvg")
+		.attr("width", width)
+        .attr("height", height)
+        .append("g")
+        .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+		
+
+
+    d3.json("data/p2p-tree.json", function(error, flare) {
+      if (error) throw error;
+
+      root = flare;
+      root.x0 = height / 2;  //由于是辐射布局这边当y0设置为0,那么这个角度x0随便设置也无所谓 因为肯定是在圆心。这里的理解不知道对不对
+      root.y0 = 0;
+	  
+			
+      function collapse(d) {
+        if (d.children) {
+          d._children = d.children;
+          d._children.forEach(collapse);
+          d.children = null;
+        }
+      }
+
+     // root.children.forEach(collapse);
+      update(root);
+    });
+
+    // // Hack to make this example display correctly in an iframe on bl.ocks.org 为了在iframe中正常显示而已。
+    d3.select(self.frameElement).style("height", "800px");
+
+    function update(source) {
+
+      // Compute the new tree layout.
+      var nodes = tree.nodes(root),
+          links = tree.links(nodes);
+
+      // Normalize for fixed-depth. 根据深度来给定相应半径，也就是深度越大半径越长。
+      nodes.forEach(function(d) { d.y = d.depth * 120; });
+
+      // Update the nodes…
+      var node = svg.selectAll("g.node")
+          .data(nodes, function(d) { return d.id || (d.id = ++i); });
+				
+				
+      // Enter any new nodes at the parent's previous position.
+      var nodeEnter = node.enter().append("g")
+          .attr("class", "node")
+          // .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+          .on("click", click);
+
+      nodeEnter.append("circle")
+          .attr("r", 1e-6)
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+      nodeEnter.append("text")
+          .attr("x", function(d) { return d.children || d._children ? -15 : 10; })
+          .attr("dy", ".35em")
+
+      .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })//小于180度的文字放在前面，否则放在后面  
+      .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
+          // .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+          .text(function(d) { return d.name; })
+          .style("fill-opacity", 1e-6);
+			
+
+      // Transition nodes to their new position.
+      var nodeUpdate = node.transition()
+          .duration(duration)
+          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+          //translate 与 rotate 的作用效果是怎么样的？？？
+      nodeUpdate.select("circle")
+          .attr("r", 16)
+          .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+      nodeUpdate.select("text")
+          .style("fill-opacity", 1);
+
+      // Transition exiting nodes to the parent's new position.
+      var nodeExit = node.exit().transition()
+          .duration(duration)
+          .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+          .remove();
+
+      nodeExit.select("circle")
+          .attr("r", 1e-6);
+
+      nodeExit.select("text")
+          .style("fill-opacity", 1e-6);
+
+      // Update the links…
+      var link = svg.selectAll("path.link")
+          .data(links, function(d) { return d.target.id; });
+
+      // Enter any new links at the parent's previous position.
+      link.enter().insert("path", "g")
+          .attr("class", "link")
+          .attr("d", function(d) {
+            var o = {x: source.x0, y: source.y0};
+            return diagonal({source: o, target: o});
+          });
+
+      // Transition links to their new position.
+      link.transition()
+          .duration(duration)
+          .attr("d", diagonal);
+
+      // Transition exiting nodes to the parent's new position.
+      link.exit().transition()
+          .duration(duration)
+          .attr("d", function(d) {
+            var o = {x: source.x0, y: source.y0};
+            return diagonal({source: o, target: o});
+          })
+          .remove();
+
+      // Stash the old positions for transition.
+      nodes.forEach(function(d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+    }
+
+    // Toggle children on click.
+    function click(d) {
+      if (d.children) {
+        d._children = d.children;
+        d.children = null;
+      } else {
+        d.children = d._children;
+        d._children = null;
+		if(d.name.substr(0, 1)!="s"){
+			alert("fuck you off!")
+		}
+      }
+      update(d);
+    }
+	
+
+  </script>
+  
+  
+  
+</body>
+</html>
