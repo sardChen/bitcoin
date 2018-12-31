@@ -144,19 +144,19 @@
         {% for block in block_info %}
 			<div class="panel-body">
 
-                    <div class="col-lg-1">
+                    <div class="col-lg-1" style="width:0.5%;padding-left:0px">
 						<div class="form-group">
-                                <label style="padding-top:5px">区块ID</label>
+                                <label style="padding-top:5px">ID</label>
                                 <p class="help-block" style="width:50%; ">{{ block.index }}</p>
                         </div>
 					</div>
-					<div class="col-lg-1">
+					<div class="col-lg-1" style="width:2.5%">
 						<div class="form-group">
                                 <label style="padding-top:5px">proof</label>
                                 <p class="help-block" style="width:50%;">{{ block.proof }}</p>
                         </div>
 					</div>
-					<div class="col-lg-3">
+					<div class="col-lg-3" style="width:21.5%">
 						<div class="form-group">
                                 {% if request.session.type == "PBFT" %}
                                     <label style="padding-top:5px">节点ID</label>
@@ -167,13 +167,13 @@
                                 <p class="help-block" style="width:50%;">{{ block.minerID }}</p>
                         </div>
 					</div>
-					<div class="col-lg-2">
+					<div class="col-lg-1" style="width:5%; padding-right:0px">
 						<div class="form-group">
-                                <label style="padding-top:5px">矿工奖励额</label>
-                                <p class="help-block" style="width:50%;">{{ block.minerAmount }} bitcoin</p>
+                                <label style="padding-top:5px">矿工奖励</label>
+                                <p class="help-block" style="width:50%;">{{ block.minerAmount }}&nbspBTC</p>
                         </div>
 					</div>
-					<div class="col-lg-3">
+					<div class="col-lg-3" style="width:21.5%">
 						<div class="form-group">
                                 <label style="padding-top:5px">已确认交易ID</label>
                             {% for tx in block.transactions %}
@@ -181,7 +181,30 @@
                                 {% endfor %}
                         </div>
 					</div>
-
+                    <div class="col-lg-3" style="width:21%">
+						<div class="form-group">
+                                <label style="padding-top:5px">发送方ID</label>
+                            {% for tx in block.transactions %}
+                                <p class="help-block" style="width:50%;">{{ tx.sender }}</p>
+                                {% endfor %}
+                        </div>
+					</div>
+                    <div class="col-lg-3" style="width:21.5%">
+						<div class="form-group">
+                                <label style="padding-top:5px">接收方ID</label>
+                            {% for tx in block.transactions %}
+                                <p class="help-block" style="width:50%;">{{ tx.recipient }}</p>
+                                {% endfor %}
+                        </div>
+					</div>
+                    <div class="col-lg-1" style="width:5% ; padding-right:0px">
+						<div class="form-group">
+                                <label style="padding-top:5px">交易额</label>
+                            {% for tx in block.transactions %}
+                                <p class="help-block" style="width:50%;">{{ tx.amount }}&nbspBTC</p>
+                                {% endfor %}
+                        </div>
+					</div>
             </div>
 			{% endfor %}
             <div class="panel-footer">
