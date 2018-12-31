@@ -19,6 +19,9 @@ from demo import views
 
 urlpatterns = [
     url(r'^$', views.index, name='index'),
+    url(r'^initnet$', views.initnet, name='initnet'),
+    url(r'^initcircle$', views.initcircle, name='initcircle'),
+    url(r'^inittree$', views.inittree, name='inittree'),
     url(r'^initpow$', views.initpow, name='initpow'),
     url(r'^initBGP$', views.initBGP, name='initBGP'),
     url(r'^initdouble$', views.initdouble, name='initdouble'),

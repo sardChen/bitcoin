@@ -2,6 +2,8 @@
 <meta charset="utf-8">
 
 <style>
+
+    {% if request.session.topo != "tree" %}
     .row-center {
         text-align: center;
     }
@@ -25,6 +27,28 @@
     .tooltip {
         text-decoration: underline;
     }
+
+    {% else %}
+
+    .node {
+          cursor: pointer;
+        }
+        .node circle {
+          fill: #fff;
+          stroke: steelblue;
+          stroke-width: 1.5px;
+        }
+
+        .node text {
+          font: 14px sans-serif;
+        }
+
+        .link {
+          fill: none;
+          stroke: #ccc;
+          stroke-width: 1.5px;
+        }
+    {% endif%}
 </style>
 
 <head>
@@ -63,9 +87,13 @@
                         </div>
 					</div>
 					<div class="col-lg-3">
+                        {% if request.session.type == "BGP" %}
 						<button class="btn btn-danger"  onclick="mine('{{ host_name }}')"> 执行挖矿 </button >
                         <button class="btn btn-danger"  onclick="BGPattack('{{ host_name }}')"> BGP攻击 </button >
+                        {% endif%}
+                        {% if request.session.type == "PBFT" %}
                         <button class="btn btn-danger"  onclick="PBFT('{{ host_name }}')"> PBFT </button >
+                        {% endif%}
 						<br></br>
 						<input class="form-control"  style="width:45%; display:inline" placeholder="对方节点" id="receiver">
 						<input class="form-control"  style="width:45%; display:inline" placeholder="交易额" id="amount">
@@ -130,7 +158,12 @@
 					</div>
 					<div class="col-lg-3">
 						<div class="form-group">
-                                <label style="padding-top:5px">矿工ID</label>
+                                {% if request.session.type == "PBFT" %}
+                                    <label style="padding-top:5px">节点ID</label>
+                                {% else %}
+                                    <label style="padding-top:5px">矿工ID</label>
+                                {% endif%}
+
                                 <p class="help-block" style="width:50%;">{{ block.minerID }}</p>
                         </div>
 					</div>
@@ -163,7 +196,8 @@
 
     <script>
 
-        d3.json("{{ STATIC_URL }}/static/data/p2p.json", function (err, links) {
+        {% if request.session.topo != "tree" %}
+            d3.json("{{ STATIC_URL }}/static/data/p2p.json", function (err, links) {
             var color = d3.scale.category20();
 
             var nodes = {};
@@ -177,17 +211,22 @@
             var width = 1280,
                 height = 700;
 
+            var edge = 80;
+            {% if request.session.topo == "net" %}
+                edge = 150;
+            {% endif %}
+
             // 力布局
             var force = d3.layout.force()
                 .nodes(d3.values(nodes))
                 .links(links)
                 .size([width, height])
-                .linkDistance(120)
-                .charge(-300)
+                .linkDistance(edge)
+                .charge(-3200)
                 .on("tick", tick)
                 .start();
 
-			
+
 			var svg = d3.select("#forcesvg");
 
             var link = svg.selectAll(".link")
@@ -197,8 +236,8 @@
 
 			// 定义tooltip,在svg上加上class g的标签
 			var tooltip = d3.select("#tooltip2");
-            
-         
+
+
 
             tooltip.append("text")
                 .attr("x", 15)
@@ -272,7 +311,7 @@
                     .duration(750)
                     .attr("r", 16);
             }
-			
+
 			function click() {
             //    alert(d3.select(this).select("text").text());
             //    $.get("/get_node_info", {'hostname':d3.select(this).select("text").text()});
@@ -280,7 +319,164 @@
 			//	ocation.reload();
 			//	alert();
             }
-        });
+            });
+
+        {% else %}
+
+            var width = 1280,
+                height = 800;
+
+            var i = 0,
+                duration = 3000,
+                root;
+
+            var tree = d3.layout.tree()
+                .size([120, 100])  //360´ú±íÕ¹¿ªµÄ×î´ó½Ç¶ÈÒ²¾ÍÊÇÔ²£¬ºóÃæµÄrÖµ´ú±íÕû¸ö·øÉä²¼¾ÖµÄÕ¹¿ª×î´ó°ë¾¶£¬²¢²»ÊÇÖ¸Ä³Ò»²ã¼¶µÄ°ë¾¶¶øÊÇÕû¸öÊ÷,³¬¹ýÕâ¸ö·¶Î§µÄ¾Í²»ÏÔÊ¾ÁË£¬ºóÃæ85ÐÐd.yµÄ²ÅÊÇÄ³Ò»²ã¼¶µÄ°ë¾¶ÉèÖÃ¡£
+                .separation(function(a, b) {
+                    return (a.parent == b.parent ? 1 : 2) / a.depth;  //ÊÊÓ¦radial²¼¾Ö£¬¿ÉÒÔ¼òµ¥µÄÀí½âÎªÉî¶ÈÔ½¸ß£¬ÏàÁÚ×Ó½ÚµãÖ®¼äµÄ¾àÀëÔ½Ð¡¡£
+                });
+
+            var diagonal = d3.svg.diagonal.radial()
+                .projection(function(d) { return [d.y, d.x / 180 * Math.PI]; }); //d.y´ú±í°ë¾¶£¬(d.x/180)*PI¾ÍÊÇ¸÷¸ö½ÚµãµÄ»¡¶È±íÊ¾¡£
+
+	        var svg = d3.select("#forcesvg")
+		        .attr("width", width)
+                .attr("height", height)
+                .append("g")
+                .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+
+
+            d3.json("{{ STATIC_URL }}/static/data/p2p-tree.json", function(error, flare) {
+                if (error) throw error;
+
+                    root = flare;
+                    root.x0 = height / 2;  //ÓÉÓÚÊÇ·øÉä²¼¾ÖÕâ±ßµ±y0ÉèÖÃÎª0,ÄÇÃ´Õâ¸ö½Ç¶Èx0Ëæ±ãÉèÖÃÒ²ÎÞËùÎ½ ÒòÎª¿Ï¶¨ÊÇÔÚÔ²ÐÄ¡£ÕâÀïµÄÀí½â²»ÖªµÀ¶Ô²»¶Ô
+                    root.y0 = 0;
+
+
+                function collapse(d) {
+                    if (d.children) {
+                        d._children = d.children;
+                        d._children.forEach(collapse);
+                        d.children = null;
+                    }
+                }
+
+            // root.children.forEach(collapse);
+                update(root);
+            });
+
+            // Hack to make this example display correctly in an iframe on bl.ocks.org ÎªÁËÔÚiframeÖÐÕý³£ÏÔÊ¾¶øÒÑ¡£
+            d3.select(self.frameElement).style("height", "800px");
+
+            function update(source) {
+
+                // Compute the new tree layout.
+                var nodes = tree.nodes(root),
+                links = tree.links(nodes);
+
+                // Normalize for fixed-depth. ¸ù¾ÝÉî¶ÈÀ´¸ø¶¨ÏàÓ¦°ë¾¶£¬Ò²¾ÍÊÇÉî¶ÈÔ½´ó°ë¾¶Ô½³¤¡£
+                nodes.forEach(function(d) { d.y = d.depth * 120; });
+
+                // Update the nodes¡­
+                var node = svg.selectAll("g.node")
+                    .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+
+                // Enter any new nodes at the parent's previous position.
+                var nodeEnter = node.enter().append("g")
+                    .attr("class", "node")
+                    .on("click", click);
+
+                nodeEnter.append("circle")
+                    .attr("r", 1e-6)
+                    .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+                nodeEnter.append("text")
+                    .attr("x", function(d) { return d.children || d._children ? -15 : 10; })
+                    .attr("dy", ".35em")
+                    .attr("text-anchor", function(d) { return d.x < 180 ? "start" : "end"; })//Ð¡ÓÚ180¶ÈµÄÎÄ×Ö·ÅÔÚÇ°Ãæ£¬·ñÔò·ÅÔÚºóÃæ
+                    .attr("transform", function(d) { return d.x < 180 ? "translate(8)" : "rotate(180)translate(-8)"; })
+                    .text(function(d) { return d.name; })
+                    .style("fill-opacity", 1e-6);
+
+
+                // Transition nodes to their new position.
+                var nodeUpdate = node.transition()
+                    .duration(duration)
+                    .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+
+                nodeUpdate.select("circle")
+                    .attr("r", 16)
+                    .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+                nodeUpdate.select("text")
+                    .style("fill-opacity", 1);
+
+                // Transition exiting nodes to the parent's new position.
+                var nodeExit = node.exit().transition()
+                    .duration(duration)
+                    .attr("transform", function(d) { return "rotate(" + (d.x - 90) + ")translate(" + d.y + ")"; })
+                    .remove();
+
+                nodeExit.select("circle")
+                    .attr("r", 1e-6);
+
+                nodeExit.select("text")
+                    .style("fill-opacity", 1e-6);
+
+                // Update the links¡­
+                var link = svg.selectAll("path.link")
+                    .data(links, function(d) { return d.target.id; });
+
+                // Enter any new links at the parent's previous position.
+                link.enter().insert("path", "g")
+                    .attr("class", "link")
+                    .attr("d", function(d) {
+                    var o = {x: source.x0, y: source.y0};
+                    return diagonal({source: o, target: o});
+                });
+
+                // Transition links to their new position.
+                link.transition()
+                    .duration(duration)
+                    .attr("d", diagonal);
+
+                // Transition exiting nodes to the parent's new position.
+                link.exit().transition()
+                    .duration(duration)
+                    .attr("d", function(d) {
+                    var o = {x: source.x0, y: source.y0};
+                    return diagonal({source: o, target: o});
+                }).remove();
+
+                // Stash the old positions for transition.
+                nodes.forEach(function(d) {
+                    d.x0 = d.x;
+                    d.y0 = d.y;
+                });
+            }
+
+            // Toggle children on click.
+            function click(d) {
+                if (d.children) {
+                    d._children = d.children;
+                    d.children = null;
+                } else {
+                    d.children = d._children;
+                    d._children = null;
+		            if(d.name.substr(0, 1)!="s"){
+		                window.location.href = "get_node_info?hostname="+d.name;
+{#			            alert("fuck you off!")#}
+		            }
+                }
+                update(d);
+            }
+
+        {% endif%}
+
+
 
 	    function addNode() {
             {#alert("addNode");#}

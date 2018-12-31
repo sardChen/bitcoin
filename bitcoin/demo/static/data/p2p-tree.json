@@ -1,0 +1,43 @@
+{
+ "name": "s1",
+ "children": [
+  {
+   "name": "s2",
+   "children": [
+    {
+     "name": "s4",
+     "children": [
+      {"name": "h1s1", "size": 9800},
+      {"name": "h2s1", "size": 9800}
+     ]
+    },
+    {
+     "name": "s5",
+     "children": [
+      {"name": "h3s1", "size": 9800},
+      {"name": "h4s1", "size": 9800}
+     ]
+    }
+   ]
+  },
+  {
+   "name": "s3",
+   "children": [
+    {
+     "name": "s6",
+     "children": [
+      {"name": "h5s1", "size": 9800},
+      {"name": "h6s1", "size": 9800}
+     ]
+    },
+	{
+     "name": "s7",
+     "children": [
+      {"name": "h7s1", "size": 9800},
+      {"name": "h8s1", "size": 9800}
+     ]
+    }
+   ]
+  }
+ ]
+}
