@@ -235,8 +235,11 @@
                 height = 700;
 
             var edge = 80;
+            var charge = -3200;
             {% if request.session.topo == "net" %}
                 edge = 150;
+            {% elif request.session.topo == "star" and request.session.type == "BGP" %}
+                charge = -800;
             {% endif %}
 
             // 力布局
@@ -245,7 +248,7 @@
                 .links(links)
                 .size([width, height])
                 .linkDistance(edge)
-                .charge(-3200)
+                .charge(charge)
                 .on("tick", tick)
                 .start();
 
